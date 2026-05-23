@@ -518,6 +518,54 @@
     }
     .toast.show { opacity: 1; }
 
+    .translation-wrap {
+      margin-top: 4mm;
+      border-top: 1px dashed rgba(7,63,58,0.15);
+      padding-top: 3mm;
+    }
+    .translation-label {
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 1.5mm;
+      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .translation-box {
+      width: 100%;
+      min-height: 60mm;
+      border: 1px solid rgba(189,145,68,0.35);
+      border-radius: 3mm;
+      background: rgba(255,250,240,0.6);
+      padding: 4mm;
+      font-family: "Noto Naskh Arabic",Tahoma,serif;
+      font-size: 11pt;
+      line-height: 1.8;
+      color: var(--ink);
+      resize: vertical;
+      outline: none;
+    }
+    .translation-box[dir="ltr"] {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .translation-loader {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(189,145,68,0.3);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media print {
+      .translation-wrap { display: none !important; }
+    }
+
     @media print {
       body { background: #fff; }
       .toolbar { display: none !important; }
@@ -880,6 +928,72 @@ Kingdom of Saudi Arabia</p>
         window.open(url, '_blank');
       };
 
+      function removeTranslationBox() {
+        var box = document.getElementById('translation-wrap');
+        if (box) box.remove();
+      }
+
+      function showTranslation(text, lang, langName) {
+        removeTranslationBox();
+        var surface = document.querySelector('.writing-surface');
+        var wrap = document.createElement('div');
+        wrap.id = 'translation-wrap';
+        wrap.className = 'translation-wrap';
+        var label = document.createElement('div');
+        label.className = 'translation-label';
+        label.innerHTML = '<span>🌐 الترجمة — ' + langName + '</span><span class="translation-loader"></span>';
+        var ta = document.createElement('textarea');
+        ta.id = 'translation-textarea';
+        ta.className = 'translation-box';
+        ta.readOnly = true;
+        ta.setAttribute('dir', lang === 'ur' || lang === 'ar' ? 'rtl' : 'ltr');
+        wrap.appendChild(label);
+        wrap.appendChild(ta);
+        surface.appendChild(wrap);
+        var idx = 0;
+        function typeWriter() {
+          if (idx < text.length) {
+            ta.value += text.charAt(idx);
+            idx++;
+            setTimeout(typeWriter, 1);
+          } else {
+            label.innerHTML = '<span>🌐 الترجمة — ' + langName + '</span>';
+          }
+        }
+        typeWriter();
+      }
+
+      function translateChunks(text, pair, callback, onError) {
+        var chunkSize = 450;
+        var chunks = [];
+        for (var i = 0; i < text.length; i += chunkSize) {
+          chunks.push(text.substring(i, i + chunkSize));
+        }
+        var results = [];
+        var idx = 0;
+        function next() {
+          if (idx >= chunks.length) {
+            callback(results.join(''));
+            return;
+          }
+          fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[idx]) + '&langpair=' + pair)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data.responseStatus === 200) {
+                results.push(data.responseData.translatedText);
+              } else {
+                results.push(chunks[idx]);
+              }
+              idx++;
+              next();
+            })
+            .catch(function() {
+              onError();
+            });
+        }
+        next();
+      }
+
       window.translateDoc = function(lang) {
         var text = getText();
         if (!text) {
@@ -888,12 +1002,20 @@ Kingdom of Saudi Arabia</p>
         }
         if (lang === 'ar') {
           showToast('✅ اللغة العربية محددة');
+          removeTranslationBox();
           return;
         }
         var map = { en: 'English', fr: 'French', tr: 'Turkish', zh: 'Chinese', ko: 'Korean', es: 'Spanish', ur: 'Urdu', de: 'German' };
-        var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(text.substring(0, 5000));
-        window.open(url, '_blank');
-        showToast('🌐 يتم فتح الترجمة إلى ' + (map[lang] || lang));
+        var pair = 'ar|' + lang;
+        showToast('⏳ جاري الترجمة إلى ' + (map[lang] || lang) + '...');
+        translateChunks(text, pair, function(translated) {
+          showTranslation(translated, lang, map[lang] || lang);
+          showToast('✅ تمت الترجمة إلى ' + (map[lang] || lang));
+        }, function() {
+          showToast('❌ فشلت الترجمة الداخلية، يتم فتح Google Translate');
+          var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(text.substring(0, 5000));
+          window.open(url, '_blank');
+        });
       };
 
       document.addEventListener('DOMContentLoaded', function() {
