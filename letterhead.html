@@ -377,10 +377,7 @@
 
     /* === خانات جاهزة === */
     .meta-fields {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 1.2mm;
+      display: block;
       margin: 2mm 0 2.5mm auto;
       padding: 1.5mm 2.5mm;
       background: rgba(7, 63, 58, 0.03);
@@ -390,42 +387,43 @@
       position: relative;
       width: fit-content;
       max-width: 55%;
+      text-align: right;
     }
     .meta-row {
-      display: flex;
-      align-items: baseline;
-      gap: 1.5mm;
+      display: block;
       font-size: 9.5pt;
       direction: rtl;
-      justify-content: flex-end;
+      text-align: right;
+      margin-bottom: 1.5mm;
       width: 100%;
     }
+    .meta-row:last-child { margin-bottom: 0; }
     .meta-row .meta-label {
       font-weight: 700;
       color: var(--green);
-      min-width: 72px;
       font-family: "Noto Naskh Arabic", system-ui, sans-serif;
       text-align: right;
       white-space: nowrap;
+      display: inline;
     }
     .meta-row .meta-value {
       border-bottom: 0.8px solid var(--line);
       padding-bottom: 0.5px;
       color: var(--ink);
       font-family: "Noto Naskh Arabic", serif;
-      min-width: 80px;
-      max-width: 220px;
+      min-width: 60px;
+      max-width: 180px;
       text-align: right;
-      display: inline-block;
+      display: inline;
       word-wrap: break-word;
       overflow-wrap: break-word;
       white-space: normal;
-      line-height: 1.4;
+      line-height: 1.5;
     }
     .meta-row .meta-value:empty::before {
       content: '\200B';
-      display: inline-block;
-      min-width: 50px;
+      display: inline;
+      min-width: 40px;
     }
     .meta-row.ref-row .meta-value { color: #c0392b; font-weight: 700; }
     .meta-row.ref-row .meta-label { color: var(--green); font-weight: 700; }
@@ -731,7 +729,17 @@
     <button onclick="addNewPage()">➕ صفحة</button>
     <button onclick="toggleLines()">📏 خطوط</button>
     <button onclick="toggleDark()">🌙 داكن</button>
-    <input type="color" id="text-color" value="#12243a" onchange="changeTextColor(this.value)" title="لون الخط" style="width:32px;height:24px;padding:0;border:none;background:transparent;cursor:pointer;">
+    <div class="dropdown-wrap" id="color-dropdown">
+      <button onclick="toggleDropdown('color-dropdown')">🎨 لون ▾</button>
+      <div class="dropdown-menu">
+        <button onclick="changeTextColor('#12243a')" style="color:#12243a;font-weight:700;">⬤ أسود</button>
+        <button onclick="changeTextColor('#c0392b')" style="color:#c0392b;font-weight:700;">⬤ أحمر</button>
+        <button onclick="changeTextColor('#073f3a')" style="color:#073f3a;font-weight:700;">⬤ أخضر</button>
+        <button onclick="changeTextColor('#bd9144')" style="color:#bd9144;font-weight:700;">⬤ ذهبي</button>
+        <button onclick="changeTextColor('#1a5276')" style="color:#1a5276;font-weight:700;">⬤ أزرق</button>
+        <button onclick="changeTextColor('#7d3c98')" style="color:#7d3c98;font-weight:700;">⬤ بنفسجي</button>
+      </div>
+    </div>
     <button onclick="insertTemplate()">📄 قالب</button>
     <button onclick="openSigModal()">✍️ توقيع</button>
     <button onclick="insertStampInline()">🔴 ختم</button>
@@ -1013,8 +1021,9 @@ Kingdom of Saudi Arabia</p>
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
       };
 
-      var undoStack = [], redoStack = [], maxUndo = 30;
+      var undoStack = [], redoStack = [], maxUndo = 30, isUndoing = false;
       function pushUndo() {
+        if (isUndoing) return;
         var doc = getActiveDoc(); if (!doc) return;
         undoStack.push(doc.innerHTML);
         if (undoStack.length > maxUndo) undoStack.shift();
@@ -1022,15 +1031,19 @@ Kingdom of Saudi Arabia</p>
       }
       window.undoDoc = function() {
         var doc = getActiveDoc(); if (!doc || undoStack.length === 0) { showToast('⚠️ لا يوجد تراجع'); return; }
+        isUndoing = true;
         redoStack.push(doc.innerHTML);
         doc.innerHTML = undoStack.pop();
         showToast('↩️ تم التراجع');
+        setTimeout(function() { isUndoing = false; }, 100);
       };
       window.redoDoc = function() {
         var doc = getActiveDoc(); if (!doc || redoStack.length === 0) { showToast('⚠️ لا يوجد إعادة'); return; }
+        isUndoing = true;
         undoStack.push(doc.innerHTML);
         doc.innerHTML = redoStack.pop();
         showToast('↪️ تم الإعادة');
+        setTimeout(function() { isUndoing = false; }, 100);
       };
 
       window.saveDoc = function() {
