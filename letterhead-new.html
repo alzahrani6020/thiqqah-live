@@ -414,15 +414,16 @@
       min-width: 60px;
       max-width: 180px;
       text-align: right;
-      display: inline;
+      display: inline-block;
       word-wrap: break-word;
       overflow-wrap: break-word;
       white-space: normal;
       line-height: 1.5;
+      vertical-align: top;
     }
     .meta-row .meta-value:empty::before {
       content: '\200B';
-      display: inline;
+      display: inline-block;
       min-width: 40px;
     }
     .meta-row.ref-row .meta-value { color: #c0392b; font-weight: 700; }
@@ -792,6 +793,7 @@
       </div>
     </div>
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
+    <button onclick="exportPDF()" class="primary">📄 PDF</button>
   </div>
 
   <div id="pages-container">
@@ -1057,6 +1059,13 @@ Kingdom of Saudi Arabia</p>
         if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoDoc(); }
       });
 
+      window.exportPDF = function() {
+        showToast('📄 جاري التحضير...');
+        setTimeout(function() {
+          window.print();
+        }, 300);
+      };
+
       window.changeFont = function(font) {
         document.querySelectorAll('.doc-content').forEach(function(d) { d.style.fontFamily = "'" + font + "', Tahoma, serif"; });
         localStorage.setItem('thiqqah-doc-font', font); showToast('✅ الخط: ' + font);
@@ -1174,9 +1183,17 @@ Kingdom of Saudi Arabia</p>
           '<text x="100" y="92" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
           '<text x="100" y="118" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
           '</svg>';
-        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" style="cursor:move;">' + svg + '</div>';
+        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStamp(this)" title="انقر مرتين لتثبيت الختم" style="cursor:move;">' + svg + '</div>';
         insertAtCursor(html + '<span>&nbsp;</span>');
-        showToast('🔴 تم إدراج الختم — اسحبه للمكان المناسب');
+        showToast('🔴 تم إدراج الختم — اسحبه ثم انقر عليه مرتين لتثبيته');
+      };
+
+      window.lockStamp = function(el) {
+        el.setAttribute('draggable', 'false');
+        el.style.cursor = 'default';
+        el.removeAttribute('ondblclick');
+        el.removeAttribute('title');
+        showToast('🔒 تم تثبيت الختم');
       };
       window.stampDragStart = function(e) {
         e.dataTransfer.setData('text/plain', e.target.id);
