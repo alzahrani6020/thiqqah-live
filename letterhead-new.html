@@ -379,14 +379,17 @@
     .meta-fields {
       display: flex;
       flex-direction: column;
+      align-items: flex-end;
       gap: 2.5mm;
-      margin: 3mm 0 4mm;
+      margin: 3mm 0 4mm auto;
       padding: 3mm 4mm;
       background: rgba(7, 63, 58, 0.03);
       border-radius: 3mm;
       border-right: 3px solid var(--gold-3);
       z-index: 3;
       position: relative;
+      width: fit-content;
+      max-width: 100%;
     }
     .meta-row {
       display: flex;
@@ -394,25 +397,32 @@
       gap: 2mm;
       font-size: 11pt;
       direction: rtl;
+      justify-content: flex-end;
+      width: 100%;
     }
     .meta-row .meta-label {
       font-weight: 700;
       color: var(--green);
-      min-width: 72px;
+      min-width: 90px;
       font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+      text-align: right;
+      white-space: nowrap;
     }
     .meta-row .meta-value {
-      flex: 1;
       border-bottom: 1px solid var(--line);
       padding-bottom: 1px;
       color: var(--ink);
       font-family: "Noto Naskh Arabic", serif;
+      min-width: 120px;
+      text-align: right;
     }
     .meta-row .meta-value:empty::before {
       content: '\200B';
       display: inline-block;
       min-width: 80px;
     }
+    .meta-row.ref-row .meta-label,
+    .meta-row.ref-row .meta-value { color: #c0392b; font-weight: 700; }
 
     /* === مساحة الكتابة === */
     .writing-surface {
@@ -687,6 +697,12 @@
     <button onclick="insertDateTime()">📅 تاريخ</button>
     <button onclick="insertSubject()">📌 الموضوع</button>
     <button onclick="generateRef()">🔢 رقم صادر</button>
+    <div class="dropdown-wrap" id="archive-dropdown">
+      <button onclick="toggleDropdown('archive-dropdown')">📁 أرشيف ▾</button>
+      <div class="dropdown-menu" id="archive-menu">
+        <button onclick="loadArchive()" style="font-weight:700;color:var(--green);">↻ تحديث الأرشيف</button>
+      </div>
+    </div>
     <button onclick="insertTable()">▦ جدول</button>
     <button onclick="addNewPage()">➕ صفحة</button>
     <button onclick="toggleLines()">📏 خطوط</button>
@@ -750,7 +766,6 @@
       <span class="corner-ornament tr"></span>
       <span class="corner-ornament tl"></span>
       <span class="corner-ornament br"></span>
-      <span class="corner-ornament bl"></span>
       <div class="top-rule"></div>
       <div class="sheet-inner">
         <div class="sheet-inner-watermark"></div>
@@ -779,7 +794,7 @@ Kingdom of Saudi Arabia</p>
           <div class="meta-row"><span class="meta-label">التاريخ:</span><span class="meta-value" id="meta-date"></span></div>
           <div class="meta-row"><span class="meta-label">إلى السيد/ـة:</span><span class="meta-value" contenteditable="true"></span></div>
           <div class="meta-row"><span class="meta-label">الموضوع:</span><span class="meta-value" contenteditable="true"></span></div>
-          <div class="meta-row"><span class="meta-label">الرقم المرجعي:</span><span class="meta-value" id="meta-ref" contenteditable="true"></span></div>
+          <div class="meta-row ref-row"><span class="meta-label">الرقم المرجعي:</span><span class="meta-value" id="meta-ref" contenteditable="true"></span></div>
         </div>
 
         <div class="writing-surface" id="surface-1">
@@ -893,8 +908,41 @@ Kingdom of Saudi Arabia</p>
         var ref = 'THQ-' + year + '-' + num;
         localStorage.setItem('thiqqah-last-ref', ref);
         document.getElementById('meta-ref').textContent = ref;
+        var archive = JSON.parse(localStorage.getItem('thiqqah-archive') || '[]');
+        archive.unshift({ ref: ref, date: new Date().toLocaleDateString('ar-SA'), ts: Date.now() });
+        localStorage.setItem('thiqqah-archive', JSON.stringify(archive.slice(0, 50)));
         insertAtCursor('<div><strong>رقم الصادر:</strong> ' + ref + '</div><div><br></div>');
         showToast('✅ رقم الصادر: ' + ref);
+      };
+
+      window.loadArchive = function() {
+        var menu = document.getElementById('archive-menu');
+        var archive = JSON.parse(localStorage.getItem('thiqqah-archive') || '[]');
+        menu.innerHTML = '';
+        var refreshBtn = document.createElement('button');
+        refreshBtn.textContent = '↻ تحديث الأرشيف';
+        refreshBtn.style.fontWeight = '700';
+        refreshBtn.style.color = '#0a665d';
+        refreshBtn.onclick = function() { loadArchive(); };
+        menu.appendChild(refreshBtn);
+        if (archive.length === 0) {
+          var empty = document.createElement('button');
+          empty.textContent = '⚠️ لا يوجد أرشيف';
+          empty.disabled = true;
+          menu.appendChild(empty);
+        } else {
+          archive.forEach(function(item) {
+            var btn = document.createElement('button');
+            btn.innerHTML = '<span style="color:#c0392b;font-weight:700;">' + item.ref + '</span> <span style="color:#888;font-size:11px;">— ' + item.date + '</span>';
+            btn.onclick = function() {
+              document.getElementById('meta-ref').textContent = item.ref;
+              showToast('📁 تم استدعاء: ' + item.ref);
+              toggleDropdown('archive-dropdown');
+            };
+            menu.appendChild(btn);
+          });
+        }
+        toggleDropdown('archive-dropdown');
       };
 
       window.insertTable = function() {
