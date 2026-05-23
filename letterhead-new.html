@@ -769,6 +769,7 @@
     <div class="dropdown-wrap" id="share-dropdown">
       <button onclick="toggleDropdown('share-dropdown')">📤 مشاركة ▾</button>
       <div class="dropdown-menu">
+        <button onclick="downloadPDF()" style="font-weight:700;color:#0a665d;">📄 تحميل PDF</button>
         <button onclick="shareWhatsApp()">💬 واتساب</button>
         <button onclick="shareTelegram()">✈️ تلغرام</button>
         <button onclick="shareEmail()">📧 بريد إلكتروني</button>
@@ -1064,6 +1065,23 @@ Kingdom of Saudi Arabia</p>
         setTimeout(function() {
           window.print();
         }, 300);
+      };
+
+      window.downloadPDF = function() {
+        showToast('⏳ جاري توليد PDF...');
+        var element = document.querySelector('.sheet');
+        var opt = {
+          margin: 0,
+          filename: 'thiqqah-letterhead-' + new Date().toISOString().slice(0,10) + '.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(function() {
+          showToast('✅ تم تحميل PDF');
+        }).catch(function() {
+          showToast('❌ فشل توليد PDF');
+        });
       };
 
       window.changeFont = function(font) {
