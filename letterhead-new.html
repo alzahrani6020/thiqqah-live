@@ -25,9 +25,9 @@
       --sand: #f2eadb;
       --line: rgba(18, 36, 58, 0.10);
       --header-pad-logo: 44mm;
-      --watermark-opacity: 0.12;
-      --watermark-opacity-print: 0.09;
-      --watermark-bg-width-pct: 34%;
+      --watermark-opacity: 0.045;
+      --watermark-opacity-print: 0.035;
+      --watermark-bg-width-pct: 26%;
     }
     .dark-mode {
       --ink: #e2e8f0;
@@ -293,9 +293,9 @@
     .brand-logo-xl {
       position: relative;
       z-index: 1;
-      width: 42mm;
+      width: 30mm;
       height: auto;
-      max-height: 28mm;
+      max-height: 22mm;
       max-width: none;
       object-fit: contain;
       display: block;
@@ -312,10 +312,10 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 4mm 5mm;
-      padding-inline-end: var(--header-pad-logo);
+      padding-inline-end: 36mm;
       padding-inline-start: 1mm;
       padding-top: 1mm;
-      min-height: 26mm;
+      min-height: 22mm;
     }
     .brand-block--ar {
       flex: 1 1 0;
@@ -694,6 +694,8 @@
     <button onclick="insertTemplate()">📄 قالب</button>
     <button onclick="openSigModal()">✍️ توقيع</button>
     <button onclick="insertStampInline()">🔴 ختم</button>
+    <button onclick="undoDoc()">↩️ تراجع</button>
+    <button onclick="redoDoc()">↪️ إعادة</button>
     <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
     <div class="toolbar-divider"></div>
     <label class="toolbar-check">
@@ -946,11 +948,36 @@ Kingdom of Saudi Arabia</p>
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
       };
 
+      var undoStack = [], redoStack = [], maxUndo = 30;
+      function pushUndo() {
+        var doc = getActiveDoc(); if (!doc) return;
+        undoStack.push(doc.innerHTML);
+        if (undoStack.length > maxUndo) undoStack.shift();
+        redoStack = [];
+      }
+      window.undoDoc = function() {
+        var doc = getActiveDoc(); if (!doc || undoStack.length === 0) { showToast('⚠️ لا يوجد تراجع'); return; }
+        redoStack.push(doc.innerHTML);
+        doc.innerHTML = undoStack.pop();
+        showToast('↩️ تم التراجع');
+      };
+      window.redoDoc = function() {
+        var doc = getActiveDoc(); if (!doc || redoStack.length === 0) { showToast('⚠️ لا يوجد إعادة'); return; }
+        undoStack.push(doc.innerHTML);
+        doc.innerHTML = redoStack.pop();
+        showToast('↪️ تم الإعادة');
+      };
+
       window.saveDoc = function() {
         var html = getHtml();
         if (html) { localStorage.setItem('thiqqah-doc-html', html); showToast('✅ تم الحفظ'); }
         else showToast('⚠️ لا يوجد نص');
       };
+
+      document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoDoc(); }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoDoc(); }
+      });
 
       window.changeFont = function(font) {
         document.querySelectorAll('.doc-content').forEach(function(d) { d.style.fontFamily = "'" + font + "', Tahoma, serif"; });
