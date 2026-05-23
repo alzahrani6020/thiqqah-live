@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>ترويسة مطبوعة — مكتب ثقة الذهبية</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ترويسة مطبوعة — مكتب ثقة الذهبية</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&family=Almarai:wght@400;700;800&family=Scheherazade+New:wght@400;700&family=Reem+Kufi:wght@400;500;700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
   <style>
     :root {
       --ink: #12243a;
@@ -56,7 +59,7 @@
       font-weight: 600;
       font-size: 13px;
     }
-    .toolbar button, .toolbar .tool-btn {
+    .toolbar button, .toolbar .tool-btn, .toolbar select {
       background: rgba(255,255,255,0.1);
       color: #fff;
       border: 1px solid rgba(255,255,255,0.15);
@@ -79,13 +82,15 @@
       background: linear-gradient(135deg, #bd9144, #0f7a68);
       border-color: transparent;
     }
-    .toolbar button.primary:hover, .toolbar .tool-btn.primary:hover {
-      opacity: 0.9;
+    .toolbar button.primary:hover, .toolbar .tool-btn.primary:hover { opacity: 0.9; }
+    .toolbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .toolbar select {
+      font-family: system-ui, sans-serif;
+      appearance: auto;
+      padding: 4px 8px;
+      font-weight: 600;
     }
-    .toolbar button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    .toolbar select option { color: #12243a; background: #fff; }
 
     .toolbar-divider {
       width: 1px;
@@ -130,20 +135,20 @@
     }
     .dropdown-menu button:hover { background: #f2eadb; color: #0a665d; }
 
-    html[lang="en"] .hint-screen { direction: ltr; }
-    .hint-screen code {
-      background: rgba(7, 63, 58, 0.55);
-      padding: 2px 6px;
-      border-radius: 4px;
+    .toolbar-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #efd89c;
+      cursor: pointer;
+      user-select: none;
     }
-    .hint-screen--warn {
-      border-color: #b84848;
-      background: #3a1c1c;
-    }
+    .toolbar-check input { cursor: pointer; }
 
     .sheet {
       width: 210mm;
-      height: 297mm;
       min-height: 297mm;
       margin: 0 auto 12mm;
       display: flex;
@@ -167,7 +172,6 @@
     .sheet-inner {
       position: relative;
       flex: 1 1 auto;
-      min-height: 0;
       width: 100%;
       padding: 11mm 13mm 15mm 13mm;
       z-index: 1;
@@ -201,7 +205,6 @@
       opacity: 0.9;
       border-color: var(--green);
     }
-
     .corner-ornament.tr {
       top: 5.5mm;
       right: 5.5mm;
@@ -209,7 +212,6 @@
       border-right: 2.5px solid;
       border-radius: 0 10px 0 0;
     }
-
     html[lang="en"] .corner-ornament.tr {
       right: auto;
       left: 5.5mm;
@@ -217,7 +219,6 @@
       border-left: 2.5px solid;
       border-radius: 10px 0 0 0;
     }
-
     .corner-ornament.bl {
       bottom: 11mm;
       left: 5.5mm;
@@ -225,7 +226,6 @@
       border-left: 2.5px solid;
       border-radius: 0 0 0 10px;
     }
-
     html[lang="en"] .corner-ornament.bl {
       left: auto;
       right: 5.5mm;
@@ -253,19 +253,16 @@
       border-bottom: 3px double var(--green);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 250, 240, 0.15) 100%);
     }
-
     .brand-logo-corner {
       position: absolute;
       top: -0.5mm;
       right: -2mm;
       z-index: 3;
     }
-
     html[lang="en"] .brand-logo-corner {
       right: auto;
       left: -2mm;
     }
-
     .brand-logo-wrap {
       position: relative;
       padding: 1.5mm 1.2mm;
@@ -274,7 +271,6 @@
       border: 2px solid var(--green);
       box-shadow: 0 2px 8px rgba(18, 36, 58, 0.1);
     }
-
     .brand-logo-xl {
       position: relative;
       z-index: 1;
@@ -285,11 +281,7 @@
       object-fit: contain;
       display: block;
       border-radius: 6px;
-      filter:
-        contrast(1.16)
-        saturate(1.2)
-        drop-shadow(0 1px 0 rgba(255, 255, 255, 1))
-        drop-shadow(0 0 2px rgba(189, 145, 68, 0.35));
+      filter: contrast(1.16) saturate(1.2) drop-shadow(0 1px 0 rgba(255, 255, 255, 1)) drop-shadow(0 0 2px rgba(189, 145, 68, 0.35));
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -306,12 +298,10 @@
       padding-top: 0.5mm;
       min-height: 25mm;
     }
-
     html[lang="en"] .brand-text-columns {
       padding-inline-start: var(--header-pad-logo);
       padding-inline-end: 1mm;
     }
-
     .brand-block--ar {
       flex: 1 1 0;
       min-width: 0;
@@ -321,7 +311,6 @@
       text-justify: inter-word;
       hyphens: manual;
     }
-
     .brand-block--en {
       flex: 0 1 42%;
       min-width: 0;
@@ -334,7 +323,6 @@
       padding-right: 4mm;
       margin-right: 1mm;
     }
-
     .brand-block--ar .name {
       font-family: "Aref Ruqaa", "Noto Naskh Arabic", serif;
       font-size: 13.8pt;
@@ -346,9 +334,7 @@
       word-spacing: 0.12em;
       font-feature-settings: "kern" 1, "liga" 1;
     }
-
     .brand-block--ar .name span.gold { color: var(--ink); }
-
     .brand-block--ar .cr {
       margin-top: 1.1mm;
       font-size: 9.4pt;
@@ -358,9 +344,7 @@
       word-spacing: 0.06em;
       line-height: 1.45;
     }
-
     .brand-block--ar .cr strong { color: var(--ink); }
-
     .brand-block--ar .city {
       margin-top: 0.9mm;
       font-size: 8.4pt;
@@ -370,7 +354,6 @@
       word-spacing: 0.08em;
       line-height: 1.45;
     }
-
     .brand-block--en .name-en {
       font-size: 10.2pt;
       font-weight: 600;
@@ -380,7 +363,6 @@
       text-transform: uppercase;
       font-variant: normal;
     }
-
     .brand-block--en .tagline-en {
       margin-top: 1.1mm;
       font-size: 8.2pt;
@@ -400,12 +382,46 @@
       background: rgba(255, 250, 240, 0.32);
       border: 1px dashed rgba(7, 63, 58, 0.12);
     }
+    .doc-content {
+      width: 100%;
+      min-height: 192mm;
+      padding: 4mm;
+      font-family: "Noto Naskh Arabic", Tahoma, serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: var(--ink);
+      outline: none;
+      direction: rtl;
+      text-align: justify;
+    }
+    .doc-content:empty::before {
+      content: 'اكتب نصك هنا...';
+      color: #999;
+      pointer-events: none;
+    }
+    .doc-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 11pt;
+    }
+    .doc-content table th,
+    .doc-content table td {
+      border: 1px solid var(--green);
+      padding: 6px 10px;
+      text-align: right;
+      direction: rtl;
+    }
+    .doc-content table th {
+      background: rgba(7, 63, 58, 0.08);
+      font-weight: 700;
+    }
+    .doc-content p { margin-bottom: 0.6em; }
+    .doc-content[dir="ltr"] { text-align: left; direction: ltr; font-family: system-ui, -apple-system, sans-serif; }
 
     @media print {
-      .writing-surface {
-        background: transparent;
-        border: none;
-      }
+      .writing-surface { background: transparent; border: none; }
+      .doc-content { min-height: auto; padding: 2mm 0; }
     }
 
     .footer-zone {
@@ -415,14 +431,12 @@
       bottom: 4.5mm;
       z-index: 4;
     }
-
     .footer-rule {
       width: 100%;
       padding-top: 2mm;
       border-top: 2px solid var(--gold);
       box-shadow: 0 -1px 0 0 var(--green);
     }
-
     .footer-line {
       display: flex;
       flex-direction: row;
@@ -432,7 +446,6 @@
       flex-wrap: wrap;
       padding: 1.4mm 0 0.6mm;
     }
-
     .footer-contacts-inline {
       flex: 1 1 auto;
       order: 1;
@@ -447,13 +460,8 @@
       direction: rtl;
       line-height: 1.35;
     }
-
     html[dir="rtl"] .footer-contacts-inline { order: 2; }
-    html[lang="en"] .footer-contacts-inline {
-      direction: ltr;
-      text-align-last: center;
-    }
-
+    html[lang="en"] .footer-contacts-inline { direction: ltr; text-align-last: center; }
     .footer-contacts-inline .footer-name-ar {
       font-weight: 700;
       color: var(--green-2);
@@ -461,19 +469,16 @@
       unicode-bidi: isolate;
       font-family: "Noto Naskh Arabic", "Tahoma", "Segoe UI", sans-serif;
     }
-
     .footer-contacts-inline a {
       color: var(--green-2);
       text-decoration: none;
       white-space: nowrap;
     }
-
     .footer-contacts-inline .dot {
       margin: 0 0.45em;
       color: var(--gold);
       opacity: 0.9;
     }
-
     .footer-qr-inline {
       flex: 0 0 auto;
       order: 2;
@@ -482,9 +487,7 @@
       text-decoration: none;
       color: inherit;
     }
-
     html[dir="rtl"] .footer-qr-inline { order: 1; }
-
     .footer-qr-inline img {
       width: 11mm;
       height: 11mm;
@@ -518,94 +521,36 @@
     }
     .toast.show { opacity: 1; }
 
-    .translation-wrap {
-      margin-top: 4mm;
-      border-top: 1px dashed rgba(7,63,58,0.15);
-      padding-top: 3mm;
-    }
-    .translation-label {
-      font-size: 9pt;
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: 1.5mm;
-      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .translation-box {
-      width: 100%;
-      min-height: 60mm;
-      border: 1px solid rgba(189,145,68,0.35);
-      border-radius: 3mm;
-      background: rgba(255,250,240,0.6);
-      padding: 4mm;
-      font-family: "Noto Naskh Arabic",Tahoma,serif;
-      font-size: 11pt;
-      line-height: 1.8;
-      color: var(--ink);
-      resize: vertical;
-      outline: none;
-    }
-    .translation-box[dir="ltr"] {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-    .translation-loader {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(189,145,68,0.3);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin-left: 6px;
-      vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .translation-actions {
-      display: flex;
-      gap: 6px;
-      margin-top: 2mm;
-      margin-bottom: 1mm;
-      flex-wrap: wrap;
-    }
-    .translation-actions button {
-      background: rgba(7,63,58,0.08);
-      border: 1px solid rgba(7,63,58,0.15);
-      color: var(--green);
-      padding: 4px 10px;
-      border-radius: 5px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
+    .page-label {
+      position: absolute;
+      top: 3mm;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8pt;
+      color: var(--muted);
       font-family: system-ui, sans-serif;
-    }
-    .translation-actions button:hover {
-      background: rgba(7,63,58,0.15);
-    }
-    .translation-actions button.primary-action {
-      background: linear-gradient(135deg, #bd9144, #0f7a68);
-      color: #fff;
-      border-color: transparent;
+      z-index: 6;
+      background: rgba(255,250,240,0.8);
+      padding: 1px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--line);
     }
 
     @media print {
       body { background: #fff; }
       .toolbar { display: none !important; }
+      .page-label { display: none !important; }
       .sheet {
-        margin: 0;
+        margin: 0 auto;
+        page-break-after: always;
+        break-after: page;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
         height: 297mm;
         min-height: 297mm;
-        display: flex;
-        flex-direction: column;
-        border-radius: 4mm;
-        overflow: hidden;
-        border: 1pt solid var(--gold);
-        box-shadow:
-          0 0 0 1pt #fffaf0,
-          0 0 0 3pt var(--green),
-          0 0 0 4pt var(--gold);
       }
+      .sheet:last-child { page-break-after: auto; break-after: auto; }
       .sheet-inner { padding: 11mm 13mm 15mm; }
       .footer-contacts-inline a,
       .footer-contacts-inline .footer-name-ar { color: var(--green-2); }
@@ -616,10 +561,7 @@
       }
     }
 
-    @page {
-      size: A4;
-      margin: 0;
-    }
+    @page { size: A4; margin: 0; }
   </style>
 </head>
 <body>
@@ -631,7 +573,23 @@
     <button onclick="insertDateTime()">📅 تاريخ</button>
     <button onclick="insertSubject()">📌 الموضوع</button>
     <button onclick="generateRef()">🔢 رقم صادر</button>
+    <button onclick="insertTable()">▦ جدول</button>
+    <button onclick="addNewPage()">➕ صفحة</button>
     <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
+    <div class="toolbar-divider"></div>
+    <label class="toolbar-check" title="الترجمة تظهر في ورقة A4 منفصلة">
+      <input type="checkbox" id="trans-separate" onchange="toggleTransSeparate()">
+      <span>ترجمة في صفحة منفصلة</span>
+    </label>
+    <select id="font-select" onchange="changeFont(this.value)" title="اختيار الخط">
+      <option value="Noto Naskh Arabic" style="font-family:'Noto Naskh Arabic'">Noto Naskh</option>
+      <option value="Amiri" style="font-family:'Amiri'">Amiri</option>
+      <option value="Cairo" style="font-family:'Cairo'">Cairo</option>
+      <option value="Tajawal" style="font-family:'Tajawal'">Tajawal</option>
+      <option value="Almarai" style="font-family:'Almarai'">Almarai</option>
+      <option value="Scheherazade New" style="font-family:'Scheherazade New'">Scheherazade</option>
+      <option value="Reem Kufi" style="font-family:'Reem Kufi'">Reem Kufi</option>
+    </select>
     <div class="toolbar-divider"></div>
     <div class="dropdown-wrap" id="share-dropdown">
       <button onclick="toggleDropdown('share-dropdown')">📤 مشاركة ▾</button>
@@ -662,126 +620,68 @@
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
   </div>
 
-  <div class="sheet">
-    <div class="top-rule" aria-hidden="true"></div>
+  <div id="pages-container">
+    <!-- الصفحة 1 -->
+    <div class="sheet" data-page="1">
+      <span class="page-label">صفحة 1</span>
+      <div class="top-rule" aria-hidden="true"></div>
+      <div class="sheet-inner">
+        <div class="sheet-inner-watermark" aria-hidden="true"></div>
+        <span class="corner-ornament tr" aria-hidden="true"></span>
+        <span class="corner-ornament bl" aria-hidden="true"></span>
 
-    <div class="sheet-inner">
-      <div class="sheet-inner-watermark" id="letterhead-watermark" aria-hidden="true"></div>
-      <span class="corner-ornament tr" aria-hidden="true"></span>
-      <span class="corner-ornament bl" aria-hidden="true"></span>
-
-      <header class="brand-ribbon">
-        <div class="brand-logo-corner">
-          <div class="brand-logo-wrap">
-            <img
-              id="letterhead-logo"
-              class="brand-logo-xl"
-              src="assets/thiqqah-logo-full.png"
-              alt="شعار مكتب ثقة الذهبية للخدمات العامة"
-              width="280"
-              height="280">
+        <header class="brand-ribbon">
+          <div class="brand-logo-corner">
+            <div class="brand-logo-wrap">
+              <img class="brand-logo-xl" src="assets/thiqqah-logo-full.png" alt="شعار مكتب ثقة الذهبية للخدمات العامة" width="280" height="280">
+            </div>
           </div>
-        </div>
-
-        <div class="brand-text-columns">
-          <div class="brand-block--en" lang="en" dir="ltr">
-            <p class="name-en"><span id="brand-en-l1">Al-Thiqqah</span><br><span id="brand-en-l2">Al-Dhahabiyah</span><br><span id="brand-en-l3">General Services Office</span></p>
-            <p class="tagline-en" id="brand-en-tagline">Commercial Registration No. 4030506321
+          <div class="brand-text-columns">
+            <div class="brand-block--en" lang="en" dir="ltr">
+              <p class="name-en">Al-Thiqqah<br>Al-Dhahabiyah<br>General Services Office</p>
+              <p class="tagline-en">Commercial Registration No. 4030506321
 Kingdom of Saudi Arabia</p>
+            </div>
+            <div class="brand-block--ar" lang="ar">
+              <h1 class="name">مكتب <span class="gold">ثقة الذهبية</span><br>للخدمات العامة</h1>
+              <p class="cr"><strong>السجل التجاري:</strong> 4030506321</p>
+              <p class="city">جدة — منطقة مكة المكرمة — المملكة العربية السعودية</p>
+            </div>
           </div>
-          <div class="brand-block--ar" lang="ar">
-            <h1 class="name">
-              <span id="brand-ar-before">مكتب </span><span class="gold" id="brand-ar-gold">ثقة الذهبية</span><br>
-              <span id="brand-ar-line2">للخدمات العامة</span>
-            </h1>
-            <p class="cr"><strong>السجل التجاري:</strong> <span id="brand-cr">4030506321</span></p>
-            <p class="city" id="brand-city">جدة — منطقة مكة المكرمة — المملكة العربية السعودية</p>
-          </div>
+        </header>
+
+        <div class="writing-surface" role="region" aria-label="مساحة كتابة للخطابات والعقود">
+          <div class="doc-content" id="doc-1" dir="rtl"></div>
         </div>
-      </header>
 
-      <div class="writing-surface" role="region" aria-label="مساحة كتابة فارغة للخطابات والعقود"></div>
-
-      <div class="footer-zone">
-        <div class="footer-rule"></div>
-        <div class="footer-line">
-          <div class="footer-contacts-inline">
-            <span class="footer-name-ar" id="footer-name-ar" dir="rtl">مكتب ثقة الذهبية للخدمات العامة</span>
-            <span class="dot">·</span>
-            <a id="footer-site" href="https://thiqqah.live/" dir="ltr">thiqqah.live</a>
-            <span class="dot">·</span>
-            <a id="footer-email" href="mailto:info@thiqqah.live" dir="ltr">info@thiqqah.live</a>
-            <span class="dot">·</span>
-            <a id="footer-phone" href="tel:+966567566616" dir="ltr">+966 56 756 6616</a>
+        <div class="footer-zone">
+          <div class="footer-rule"></div>
+          <div class="footer-line">
+            <div class="footer-contacts-inline">
+              <span class="footer-name-ar" dir="rtl">مكتب ثقة الذهبية للخدمات العامة</span>
+              <span class="dot">·</span>
+              <a href="https://thiqqah.live/" dir="ltr">thiqqah.live</a>
+              <span class="dot">·</span>
+              <a href="mailto:info@thiqqah.live" dir="ltr">info@thiqqah.live</a>
+              <span class="dot">·</span>
+              <a href="tel:+966567566616" dir="ltr">+966 56 756 6616</a>
+            </div>
+            <a class="footer-qr-inline" href="https://thiqqah.live/" target="_blank" rel="noopener" aria-label="QR الموقع الإلكتروني">
+              <img src="assets/letterhead-qr.png" width="128" height="128" alt="رمز استجابة سريعة لموقع ثقة">
+            </a>
           </div>
-          <a class="footer-qr-inline" id="footer-qr-link" href="https://thiqqah.live/" target="_blank" rel="noopener" aria-label="QR الموقع الإلكتروني">
-            <img
-              id="letterhead-qr"
-              src="assets/letterhead-qr.png"
-              width="128"
-              height="128"
-              alt="رمز استجابة سريعة لموقع ثقة">
-          </a>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="thiqqah-brand.embed.js"></script>
-  <script>
-    (function () {
-      var b = window.__THIQQAH_BRAND;
-      var hint = document.getElementById("letterhead-hint");
-      if (!b) {
-        if (hint) hint.classList.add("hint-screen--warn");
-        return;
-      }
-      var cr = b.commercialRegistration;
-      document.getElementById("brand-ar-before").textContent = b.nameAr.beforeGold;
-      document.getElementById("brand-ar-gold").textContent = b.nameAr.gold;
-      document.getElementById("brand-ar-line2").textContent = b.nameAr.line2;
-      document.getElementById("brand-cr").textContent = cr;
-      document.getElementById("brand-city").textContent = b.cityLineAr;
-      document.getElementById("brand-en-l1").textContent = b.nameEn.line1;
-      document.getElementById("brand-en-l2").textContent = b.nameEn.line2;
-      document.getElementById("brand-en-l3").textContent = b.nameEn.line3;
-      document.getElementById("brand-en-tagline").textContent =
-        b.taglineEnTemplate.replace("{cr}", cr);
-      var logo = document.getElementById("letterhead-logo");
-      if (logo) logo.src = b.logoRelativePath;
-      var wm = document.getElementById("letterhead-watermark");
-      if (wm && b.watermarkRelativePath) {
-        var p = String(b.watermarkRelativePath).replace(/\\/g, "/");
-        wm.style.backgroundImage = "url(" + JSON.stringify(p) + ")";
-      }
-      var nar = b.nameAr;
-      var footerFullName =
-        String(nar.beforeGold || "").trim() +
-        String(nar.gold || "") +
-        " " +
-        String(nar.line2 || "").trim();
-      var fn = document.getElementById("footer-name-ar");
-      if (fn) fn.textContent = footerFullName.trim();
-      var site = document.getElementById("footer-site");
-      site.textContent = b.displayUrl;
-      site.href = b.siteUrl;
-      var em = document.getElementById("footer-email");
-      em.textContent = b.email;
-      em.href = "mailto:" + b.email;
-      var ph = document.getElementById("footer-phone");
-      ph.textContent = b.phoneDisplay;
-      ph.href = "tel:" + String(b.phoneE164).replace(/\s+/g, "");
-      var qrA = document.getElementById("footer-qr-link");
-      if (qrA) qrA.href = b.siteUrl;
-      var qrImg = document.getElementById("letterhead-qr");
-      if (qrImg) qrImg.src = b.qrImageRelativePath;
-    })();
-  </script>
-
   <div class="toast" id="toast"></div>
+
   <script>
     (function() {
       var writingMode = false;
+      var pageCounter = 1;
+      var transSeparate = false;
 
       function showToast(msg) {
         var t = document.getElementById('toast');
@@ -790,102 +690,162 @@ Kingdom of Saudi Arabia</p>
         setTimeout(function() { t.classList.remove('show'); }, 2000);
       }
 
-      function getText() {
-        var ta = document.getElementById('doc-textarea');
-        return ta ? ta.value.trim() : '';
+      function getActiveDoc() {
+        return document.querySelector('.doc-content');
       }
 
-      function ensureTextarea() {
-        var ta = document.getElementById('doc-textarea');
-        if (!ta) { showToast('⚠️ افتح الكتابة أولاً'); return null; }
-        return ta;
+      function getText() {
+        var doc = getActiveDoc();
+        return doc ? doc.innerText.trim() : '';
+      }
+
+      function getHtml() {
+        var doc = getActiveDoc();
+        return doc ? doc.innerHTML : '';
+      }
+
+      function ensureDoc() {
+        var doc = getActiveDoc();
+        if (!doc) { showToast('⚠️ افتح الكتابة أولاً'); return null; }
+        return doc;
       }
 
       window.toggleWrite = function() {
-        var surface = document.querySelector('.writing-surface');
+        var doc = getActiveDoc();
         var btn = document.getElementById('btn-write');
         if (!writingMode) {
-          var ta = document.createElement('textarea');
-          ta.id = 'doc-textarea';
-          ta.setAttribute('dir', 'rtl');
-          ta.setAttribute('placeholder', 'اكتب نصك هنا...');
-          ta.style.cssText = 'width:100%;height:130mm;border:none;background:transparent;resize:none;font-family:"Noto Naskh Arabic",Tahoma,serif;font-size:12pt;line-height:1.8;color:var(--ink);padding:4mm;outline:none;';
-          var saved = localStorage.getItem('thiqqah-doc-text');
-          if (saved) ta.value = saved;
-          surface.appendChild(ta);
-          btn.textContent = '✅ تم';
           writingMode = true;
-          ta.focus();
+          btn.textContent = '✅ تم';
+          if (doc) {
+            doc.contentEditable = 'true';
+            doc.focus();
+          }
+          var saved = localStorage.getItem('thiqqah-doc-html');
+          if (saved && doc) doc.innerHTML = saved;
         } else {
-          var ta = document.getElementById('doc-textarea');
-          if (ta) ta.remove();
-          btn.textContent = '✏️ كتابة';
           writingMode = false;
+          btn.textContent = '✏️ كتابة';
+          if (doc) doc.contentEditable = 'false';
         }
       };
 
       window.copyText = function() {
-        var ta = ensureTextarea();
-        if (!ta) return;
+        var text = getText();
+        if (!text) { showToast('⚠️ لا يوجد نص'); return; }
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
+        document.body.removeChild(ta);
         showToast('✅ تم النسخ');
       };
 
+      function insertAtCursor(html) {
+        var doc = ensureDoc();
+        if (!doc) return;
+        doc.focus();
+        var sel = window.getSelection();
+        if (!sel.rangeCount) {
+          var range = document.createRange();
+          range.selectNodeContents(doc);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        var range = sel.getRangeAt(0);
+        range.deleteContents();
+        var div = document.createElement('div');
+        div.innerHTML = html;
+        var frag = document.createDocumentFragment();
+        var node;
+        while ((node = div.firstChild)) frag.appendChild(node);
+        range.insertNode(frag);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+
       window.insertDateTime = function() {
-        var ta = ensureTextarea();
-        if (!ta) return;
+        if (!ensureDoc()) return;
         var d = new Date();
         var dateStr = d.toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
-        var cursorPos = ta.selectionStart;
-        var text = ta.value;
-        var before = text.substring(0, cursorPos);
-        var after = text.substring(cursorPos);
-        ta.value = before + dateStr + '\n' + after;
-        ta.selectionStart = ta.selectionEnd = cursorPos + dateStr.length + 1;
-        ta.focus();
+        insertAtCursor('<div>' + dateStr + '</div><div><br></div>');
         showToast('✅ تم إدراج التاريخ');
       };
 
       window.insertSubject = function() {
-        var ta = ensureTextarea();
-        if (!ta) return;
-        var cursorPos = ta.selectionStart;
-        var text = ta.value;
-        var before = text.substring(0, cursorPos);
-        var after = text.substring(cursorPos);
-        ta.value = before + 'الموضوع: ' + after;
-        ta.selectionStart = ta.selectionEnd = cursorPos + 9;
-        ta.focus();
+        if (!ensureDoc()) return;
+        insertAtCursor('<div><strong>الموضوع:</strong> </div><div><br></div>');
         showToast('✅ تم إدراج الموضوع');
       };
 
       window.generateRef = function() {
-        var ta = ensureTextarea();
-        if (!ta) return;
+        if (!ensureDoc()) return;
         var year = new Date().getFullYear();
         var num = Math.floor(1000 + Math.random() * 9000);
         var ref = 'THQ-' + year + '-' + num;
         localStorage.setItem('thiqqah-last-ref', ref);
-        var cursorPos = ta.selectionStart;
-        var text = ta.value;
-        var before = text.substring(0, cursorPos);
-        var after = text.substring(cursorPos);
-        var line = 'رقم الصادر: ' + ref + '\n';
-        ta.value = before + line + after;
-        ta.selectionStart = ta.selectionEnd = cursorPos + line.length;
-        ta.focus();
+        insertAtCursor('<div><strong>رقم الصادر:</strong> ' + ref + '</div><div><br></div>');
         showToast('✅ رقم الصادر: ' + ref);
       };
 
+      window.insertTable = function() {
+        if (!ensureDoc()) return;
+        var rows = prompt('عدد الصفوف:', '3');
+        var cols = prompt('عدد الأعمدة:', '3');
+        if (!rows || !cols) return;
+        rows = parseInt(rows); cols = parseInt(cols);
+        if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) { showToast('⚠️ أرقام غير صحيحة'); return; }
+        var html = '<table><thead><tr>';
+        for (var c = 0; c < cols; c++) html += '<th>عنوان ' + (c+1) + '</th>';
+        html += '</tr></thead><tbody>';
+        for (var r = 0; r < rows; r++) {
+          html += '<tr>';
+          for (var c = 0; c < cols; c++) html += '<td>بيان ' + (r+1) + '-' + (c+1) + '</td>';
+          html += '</tr>';
+        }
+        html += '</tbody></table><div><br></div>';
+        insertAtCursor(html);
+        showToast('✅ تم إدراج الجدول');
+      };
+
+      window.addNewPage = function() {
+        pageCounter++;
+        var container = document.getElementById('pages-container');
+        var lastSheet = container.querySelector('.sheet:last-child');
+        var clone = lastSheet.cloneNode(true);
+        clone.setAttribute('data-page', pageCounter);
+        clone.querySelector('.page-label').textContent = 'صفحة ' + pageCounter;
+        var content = clone.querySelector('.doc-content');
+        content.id = 'doc-' + pageCounter;
+        content.innerHTML = '';
+        content.contentEditable = writingMode ? 'true' : 'false';
+        container.appendChild(clone);
+        showToast('✅ تمت إضافة صفحة ' + pageCounter);
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      };
+
       window.saveDoc = function() {
-        var ta = document.getElementById('doc-textarea');
-        if (ta && ta.value) {
-          localStorage.setItem('thiqqah-doc-text', ta.value);
+        var html = getHtml();
+        if (html) {
+          localStorage.setItem('thiqqah-doc-html', html);
           showToast('✅ تم الحفظ');
         } else {
           showToast('⚠️ لا يوجد نص للحفظ');
         }
+      };
+
+      window.changeFont = function(font) {
+        var docs = document.querySelectorAll('.doc-content');
+        docs.forEach(function(d) { d.style.fontFamily = "'" + font + "', Tahoma, serif"; });
+        localStorage.setItem('thiqqah-doc-font', font);
+        showToast('✅ الخط: ' + font);
+      };
+
+      window.toggleTransSeparate = function() {
+        transSeparate = document.getElementById('trans-separate').checked;
+        showToast(transSeparate ? '✅ الترجمة ستظهر في صفحة منفصلة' : '✅ الترجمة ستظهر أسفل النص');
       };
 
       window.toggleDropdown = function(id) {
@@ -909,138 +869,91 @@ Kingdom of Saudi Arabia</p>
 
       window.shareWhatsApp = function() {
         var text = shareText(); if (!text) return;
-        var url = 'https://wa.me/?text=' + encodeURIComponent(text.substring(0, 4000));
-        window.open(url, '_blank');
+        window.open('https://wa.me/?text=' + encodeURIComponent(text.substring(0, 4000)), '_blank');
       };
-
       window.shareTelegram = function() {
         var text = shareText(); if (!text) return;
-        var url = 'https://t.me/share/url?url=' + encodeURIComponent('https://thiqqah.live/') + '&text=' + encodeURIComponent(text.substring(0, 4096));
-        window.open(url, '_blank');
+        window.open('https://t.me/share/url?url=' + encodeURIComponent('https://thiqqah.live/') + '&text=' + encodeURIComponent(text.substring(0, 4096)), '_blank');
       };
-
       window.shareEmail = function() {
         var text = shareText(); if (!text) return;
-        var subject = 'خطاب من مكتب ثقة الذهبية';
-        var url = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text.substring(0, 8000));
-        window.location.href = url;
+        window.location.href = 'mailto:?subject=' + encodeURIComponent('خطاب من مكتب ثقة الذهبية') + '&body=' + encodeURIComponent(text.substring(0, 8000));
       };
-
       window.shareTwitter = function() {
         var text = shareText(); if (!text) return;
-        var url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text.substring(0, 280));
-        window.open(url, '_blank');
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text.substring(0, 280)), '_blank');
       };
-
       window.shareFacebook = function() {
-        showToast('📘 انسخ النص والصقه في فيسبوك');
-        var ta = ensureTextarea(); if (!ta) return;
-        ta.select(); document.execCommand('copy');
+        showToast('📘 انسخ النص والصقه في فيسبوك'); copyText();
       };
-
       window.shareLinkedIn = function() {
-        showToast('💼 انسخ النص والصقه في لينكد إن');
-        var ta = ensureTextarea(); if (!ta) return;
-        ta.select(); document.execCommand('copy');
+        showToast('💼 انسخ النص والصقه في لينكد إن'); copyText();
       };
-
       window.shareChatGPT = function() {
         var text = shareText(); if (!text) return;
-        var prompt = 'حسّن ونقّح هذا النص الرسمي:\n\n' + text;
-        var url = 'https://chat.openai.com/?q=' + encodeURIComponent(prompt.substring(0, 4000));
-        window.open(url, '_blank');
+        window.open('https://chat.openai.com/?q=' + encodeURIComponent('حسّن ونقّح هذا النص الرسمي:\n\n' + text.substring(0, 4000)), '_blank');
       };
 
-      function removeTranslationBox() {
-        var box = document.getElementById('translation-wrap');
-        if (box) box.remove();
+      function removeTransSheet() {
+        var ts = document.getElementById('translation-sheet');
+        if (ts) ts.remove();
       }
 
-      function showTranslation(text, lang, langName) {
-        removeTranslationBox();
-        var surface = document.querySelector('.writing-surface');
-        var wrap = document.createElement('div');
-        wrap.id = 'translation-wrap';
-        wrap.className = 'translation-wrap';
-        var label = document.createElement('div');
-        label.className = 'translation-label';
-        label.innerHTML = '<span>🌐 الترجمة — ' + langName + '</span><span class="translation-loader"></span>';
-        var ta = document.createElement('textarea');
-        ta.id = 'translation-textarea';
-        ta.className = 'translation-box';
-        ta.setAttribute('dir', lang === 'ur' || lang === 'ar' ? 'rtl' : 'ltr');
-        ta.style.cssText = 'width:100%;min-height:60mm;border:1px solid rgba(189,145,68,0.35);border-radius:3mm;background:rgba(255,250,240,0.6);padding:4mm;font-size:11pt;line-height:1.8;color:var(--ink);resize:vertical;outline:none;';
-        wrap.appendChild(label);
-        wrap.appendChild(ta);
-
-        var actions = document.createElement('div');
-        actions.className = 'translation-actions';
-        actions.innerHTML =
-          '<button class="primary-action" onclick="replaceWithTranslation()">🔄 استبدال النص الأصلي</button>' +
-          '<button onclick="copyTranslation()">📋 نسخ الترجمة</button>' +
-          '<button onclick="removeTranslationBox()">🗑️ إخفاء</button>';
-        wrap.appendChild(actions);
-        surface.appendChild(wrap);
+      function createTranslationSheet(text, lang, langName) {
+        removeTransSheet();
+        var container = document.getElementById('pages-container');
+        var sheet = document.createElement('div');
+        sheet.id = 'translation-sheet';
+        sheet.className = 'sheet';
+        sheet.setAttribute('data-page', 'TR');
+        sheet.innerHTML =
+          '<span class="page-label">صفحة الترجمة — ' + langName + '</span>' +
+          '<div class="top-rule" aria-hidden="true"></div>' +
+          '<div class="sheet-inner">' +
+            '<div class="sheet-inner-watermark" aria-hidden="true"></div>' +
+            '<span class="corner-ornament tr" aria-hidden="true"></span>' +
+            '<span class="corner-ornament bl" aria-hidden="true"></span>' +
+            '<header class="brand-ribbon">' +
+              '<div class="brand-logo-corner"><div class="brand-logo-wrap"><img class="brand-logo-xl" src="assets/thiqqah-logo-full.png" alt="شعار" width="280" height="280"></div></div>' +
+              '<div class="brand-text-columns">' +
+                '<div class="brand-block--en" lang="en" dir="ltr"><p class="name-en">Al-Thiqqah<br>Al-Dhahabiyah<br>General Services Office</p><p class="tagline-en">Commercial Registration No. 4030506321\nKingdom of Saudi Arabia</p></div>' +
+                '<div class="brand-block--ar" lang="ar"><h1 class="name">مكتب <span class="gold">ثقة الذهبية</span><br>للخدمات العامة</h1><p class="cr"><strong>السجل التجاري:</strong> 4030506321</p><p class="city">جدة — منطقة مكة المكرمة — المملكة العربية السعودية</p></div>' +
+              '</div>' +
+            '</header>' +
+            '<div class="writing-surface"><div class="doc-content" id="trans-content" dir="' + (lang === 'ur' || lang === 'ar' ? 'rtl' : 'ltr') + '" style="font-family:system-ui,sans-serif;min-height:192mm;"></div></div>' +
+            '<div class="footer-zone"><div class="footer-rule"></div><div class="footer-line"><div class="footer-contacts-inline"><span class="footer-name-ar" dir="rtl">مكتب ثقة الذهبية للخدمات العامة</span><span class="dot">·</span><a href="https://thiqqah.live/" dir="ltr">thiqqah.live</a><span class="dot">·</span><a href="mailto:info@thiqqah.live" dir="ltr">info@thiqqah.live</a><span class="dot">·</span><a href="tel:+966567566616" dir="ltr">+966 56 756 6616</a></div><a class="footer-qr-inline" href="https://thiqqah.live/" target="_blank" rel="noopener"><img src="assets/letterhead-qr.png" width="128" height="128" alt="QR"></a></div></div>' +
+          '</div>';
+        container.appendChild(sheet);
+        var content = document.getElementById('trans-content');
         var idx = 0;
         function typeWriter() {
           if (idx < text.length) {
-            ta.value += text.charAt(idx);
+            content.innerHTML += text.charAt(idx);
             idx++;
             setTimeout(typeWriter, 1);
           } else {
-            label.innerHTML = '<span>🌐 الترجمة — ' + langName + '</span>';
+            sheet.querySelector('.page-label').textContent = 'صفحة الترجمة — ' + langName;
           }
         }
         typeWriter();
+        window.scrollTo({ top: sheet.offsetTop, behavior: 'smooth' });
       }
-
-      window.replaceWithTranslation = function() {
-        var transTa = document.getElementById('translation-textarea');
-        var origTa = document.getElementById('doc-textarea');
-        if (!transTa || !origTa) { showToast('⚠️ لا يوجد نص للاستبدال'); return; }
-        if (confirm('هل تريد استبدال النص الأصلي بالترجمة؟')) {
-          origTa.value = transTa.value;
-          localStorage.setItem('thiqqah-doc-text', origTa.value);
-          removeTranslationBox();
-          showToast('✅ تم استبدال النص الأصلي بالترجمة');
-        }
-      };
-
-      window.copyTranslation = function() {
-        var transTa = document.getElementById('translation-textarea');
-        if (!transTa) { showToast('⚠️ لا يوجد ترجمة'); return; }
-        transTa.select();
-        document.execCommand('copy');
-        showToast('✅ تم نسخ الترجمة');
-      };
 
       function translateChunks(text, pair, callback, onError) {
         var chunkSize = 450;
         var chunks = [];
-        for (var i = 0; i < text.length; i += chunkSize) {
-          chunks.push(text.substring(i, i + chunkSize));
-        }
+        for (var i = 0; i < text.length; i += chunkSize) chunks.push(text.substring(i, i + chunkSize));
         var results = [];
         var idx = 0;
         function next() {
-          if (idx >= chunks.length) {
-            callback(results.join(''));
-            return;
-          }
+          if (idx >= chunks.length) { callback(results.join('')); return; }
           fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[idx]) + '&langpair=' + pair)
             .then(function(r) { return r.json(); })
             .then(function(data) {
-              if (data.responseStatus === 200) {
-                results.push(data.responseData.translatedText);
-              } else {
-                results.push(chunks[idx]);
-              }
-              idx++;
-              next();
+              results.push(data.responseStatus === 200 ? data.responseData.translatedText : chunks[idx]);
+              idx++; next();
             })
-            .catch(function() {
-              onError();
-            });
+            .catch(function() { onError(); });
         }
         next();
       }
@@ -1051,28 +964,35 @@ Kingdom of Saudi Arabia</p>
           if (lang === 'ar') { showToast('✅ اللغة العربية'); return; }
           showToast('⚠️ لا يوجد نص للترجمة'); return;
         }
-        if (lang === 'ar') {
-          showToast('✅ اللغة العربية محددة');
-          removeTranslationBox();
-          return;
-        }
+        if (lang === 'ar') { showToast('✅ اللغة العربية محددة'); removeTransSheet(); return; }
         var map = { en: 'English', fr: 'French', tr: 'Turkish', zh: 'Chinese', ko: 'Korean', es: 'Spanish', ur: 'Urdu', de: 'German' };
         var pair = 'ar|' + lang;
         showToast('⏳ جاري الترجمة إلى ' + (map[lang] || lang) + '...');
         translateChunks(text, pair, function(translated) {
-          showTranslation(translated, lang, map[lang] || lang);
+          if (transSeparate) {
+            createTranslationSheet(translated, lang, map[lang] || lang);
+          } else {
+            removeTransSheet();
+            insertAtCursor('<div><br></div><div style="border-top:1px dashed rgba(7,63,58,0.2);padding-top:8px;margin-top:8px;"><strong>🌐 الترجمة — ' + (map[lang] || lang) + ':</strong></div><div><br></div><div>' + translated.replace(/\n/g, '</div><div>') + '</div><div><br></div>');
+          }
           showToast('✅ تمت الترجمة إلى ' + (map[lang] || lang));
         }, function() {
-          showToast('❌ فشلت الترجمة الداخلية، يتم فتح Google Translate');
-          var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(text.substring(0, 5000));
-          window.open(url, '_blank');
+          showToast('❌ فشلت الترجمة الداخلية');
+          window.open('https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(text.substring(0, 5000)), '_blank');
         });
       };
 
       document.addEventListener('DOMContentLoaded', function() {
-        var saved = localStorage.getItem('thiqqah-doc-text');
-        if (saved) {
-          showToast('💾 هناك نص محفوظ — اضغط كتابة لتحميله');
+        var saved = localStorage.getItem('thiqqah-doc-html');
+        var doc = getActiveDoc();
+        if (saved && doc) {
+          doc.innerHTML = saved;
+          showToast('💾 هناك نص محفوظ — اضغط كتابة للتعديل');
+        }
+        var savedFont = localStorage.getItem('thiqqah-doc-font');
+        if (savedFont) {
+          document.getElementById('font-select').value = savedFont;
+          changeFont(savedFont);
         }
       });
     })();
