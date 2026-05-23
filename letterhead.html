@@ -1070,26 +1070,43 @@ Kingdom of Saudi Arabia</p>
       window.downloadPDF = function() {
         var original = document.querySelector('.sheet');
         if (!original) { showToast('❌ لا يوجد محتوى'); return; }
+        showToast('⏳ جاري توليد PDF...');
 
-        // استنساخ الورقة فقط — بدون تولبار أو نوافذ منبثقة
+        // إخفاء أي نوافذ أو توستs
+        var toast = document.getElementById('toast');
+        if (toast) toast.classList.remove('show');
+        var modal = document.getElementById('sig-modal-overlay');
+        if (modal) modal.classList.remove('open');
+        document.querySelectorAll('.dropdown-wrap.open').forEach(function(el) { el.classList.remove('open'); });
+
+        // استنساخ الورقة في مكان بعيد تماماً
         var clone = original.cloneNode(true);
         clone.style.position = 'fixed';
-        clone.style.top = '0';
-        clone.style.left = '-9999px';
-        clone.style.zIndex = '-1';
+        clone.style.top = '-99999px';
+        clone.style.left = '-99999px';
+        clone.style.width = '210mm';
+        clone.style.height = '297mm';
         clone.style.margin = '0';
         clone.style.boxShadow = 'none';
+        clone.style.borderRadius = '0';
         document.body.appendChild(clone);
 
-        var opt = {
-          margin: 0,
-          filename: 'thiqqah-letterhead-' + new Date().toISOString().slice(0,10) + '.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(clone).save().then(function() {
+        // استخدام html2canvas مباشرة على الاستنساخ
+        html2canvas(clone, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: clone.offsetWidth,
+          height: clone.offsetHeight,
+          x: 0,
+          y: 0,
+          scrollX: 0,
+          scrollY: 0
+        }).then(function(canvas) {
+          var imgData = canvas.toDataURL('image/jpeg', 0.98);
+          var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+          pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+          pdf.save('thiqqah-letterhead-' + new Date().toISOString().slice(0,10) + '.pdf');
           document.body.removeChild(clone);
           showToast('✅ تم تحميل PDF');
         }).catch(function(err) {
