@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ترويسة مطبوعة — مكتب ثقة الذهبية</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>ترويسة مطبوعة — مكتب ثقة الذهبية</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
@@ -37,11 +37,11 @@
     }
 
     /* للوثائق الإنجليزية: غيّر <html lang="en" dir="ltr"> */
-    .hint-screen {
+    .toolbar {
       max-width: 210mm;
-      margin: 8mm auto;
-      padding: 12px 16px;
-      background: var(--ink);
+      margin: 6mm auto 4mm;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #0f1a2e 0%, #1a2a4a 100%);
       color: #e8edf5;
       font-family: system-ui, sans-serif;
       font-size: 12px;
@@ -49,6 +49,42 @@
       border-radius: 10px;
       line-height: 1.55;
       border: 1px solid rgba(189, 145, 68, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .toolbar-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .toolbar button {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar button:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: #bd9144;
+    }
+    .toolbar button.primary {
+      background: linear-gradient(135deg, #bd9144, #0f7a68);
+      border-color: transparent;
+    }
+    .toolbar button.primary:hover {
+      opacity: 0.9;
+    }
+    .toolbar button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     html[lang="en"] .hint-screen {
@@ -439,7 +475,7 @@
 
     @media print {
       body { background: #fff; }
-      .hint-screen { display: none !important; }
+      .toolbar { display: none !important; }
       .sheet {
         margin: 0;
         height: 297mm;
@@ -476,10 +512,14 @@
 </head>
 <body>
 
-  <div class="hint-screen" id="letterhead-hint">
-    <strong>معاينة فقط:</strong> بيانات الرأس والتذييل تُحمّل من <code>thiqqah-brand.embed.js</code> (مُولَّد من <code>thiqqah-brand.json</code>). لا تُطبع هذا المربع.
-    <br>
-    للطباعة: <strong>Ctrl+P</strong> — A4 و<strong>تفعيل «رسومات الخلفية»</strong>. حجم الشعار المائي: <code>--watermark-bg-width-pct</code> (مثلاً 24–32). الشفافية: <code>--watermark-opacity</code>. للإنجليزية غيّر <code>html</code> إلى <code>lang=&quot;en&quot; dir=&quot;ltr&quot;</code>.
+  <div class="toolbar" id="letterhead-toolbar">
+    <span class="toolbar-title">🖨️ أدوات المستند</span>
+    <button onclick="toggleWrite()" id="btn-write">✏️ كتابة</button>
+    <button onclick="copyText()" id="btn-copy">📋 نسخ</button>
+    <button onclick="insertDateTime()">📅 وقت/تاريخ</button>
+    <button onclick="generateRef()">🔢 رقم صادر</button>
+    <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
+    <button onclick="window.print()" class="primary">🖨️ طباعة</button>
   </div>
 
   <div class="sheet">
@@ -595,6 +635,94 @@ Kingdom of Saudi Arabia</p>
       if (qrA) qrA.href = b.siteUrl;
       var qrImg = document.getElementById("letterhead-qr");
       if (qrImg) qrImg.src = b.qrImageRelativePath;
+    })();
+  </script>
+  <div class="toast" id="toast"></div>
+  <script>
+    (function() {
+      var writingMode = false;
+      var savedRef = localStorage.getItem('thiqqah-last-ref') || '';
+      if (savedRef) document.getElementById('doc-ref-num').textContent = savedRef;
+
+      function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 2000);
+      }
+
+      window.toggleWrite = function() {
+        var surface = document.querySelector('.writing-surface');
+        var sig = surface.querySelector('.signature-block');
+        var btn = document.getElementById('btn-write');
+        if (!writingMode) {
+          var ta = document.createElement('textarea');
+          ta.id = 'doc-textarea';
+          ta.setAttribute('dir', 'rtl');
+          ta.setAttribute('placeholder', 'اكتب نصك هنا...');
+          ta.style.cssText = 'width:100%;height:130mm;border:none;background:transparent;resize:none;font-family:"Noto Naskh Arabic",Tahoma,serif;font-size:12pt;line-height:1.8;color:var(--ink);padding:4mm;outline:none;';
+          var saved = localStorage.getItem('thiqqah-doc-text');
+          if (saved) ta.value = saved;
+          if (sig) surface.insertBefore(ta, sig);
+          else surface.appendChild(ta);
+          btn.textContent = '✅ تم';
+          writingMode = true;
+          ta.focus();
+        } else {
+          var ta = document.getElementById('doc-textarea');
+          if (ta) ta.remove();
+          btn.textContent = '✏️ كتابة';
+          writingMode = false;
+        }
+      };
+
+      window.copyText = function() {
+        var ta = document.getElementById('doc-textarea');
+        if (!ta) { showToast('⚠️ افتح الكتابة أولاً'); return; }
+        ta.select();
+        document.execCommand('copy');
+        showToast('✅ تم النسخ');
+      };
+
+      window.insertDateTime = function() {
+        var ta = document.getElementById('doc-textarea');
+        if (!ta) { showToast('⚠️ افتح الكتابة أولاً'); return; }
+        var d = new Date();
+        var dateStr = d.toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+        var timeStr = d.toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' });
+        var cursorPos = ta.selectionStart;
+        var text = ta.value;
+        var before = text.substring(0, cursorPos);
+        var after = text.substring(cursorPos);
+        ta.value = before + dateStr + ' — ' + timeStr + '\n' + after;
+        ta.selectionStart = ta.selectionEnd = cursorPos + dateStr.length + timeStr.length + 5;
+        ta.focus();
+        showToast('✅ تم إدراج الوقت والتاريخ');
+      };
+
+      window.generateRef = function() {
+        var year = new Date().getFullYear();
+        var num = Math.floor(1000 + Math.random() * 9000);
+        var ref = 'THQ-' + year + '-' + num;
+        document.getElementById('doc-ref-num').textContent = ref;
+        localStorage.setItem('thiqqah-last-ref', ref);
+        showToast('✅ رقم الصادر: ' + ref);
+      };
+
+      window.saveDoc = function() {
+        var ta = document.getElementById('doc-textarea');
+        if (ta && ta.value) {
+          localStorage.setItem('thiqqah-doc-text', ta.value);
+          showToast('✅ تم الحفظ');
+        } else {
+          showToast('⚠️ لا يوجد نص للحفظ');
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var d = new Date();
+        document.getElementById('doc-date').textContent = d.toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+      });
     })();
   </script>
 </body>
