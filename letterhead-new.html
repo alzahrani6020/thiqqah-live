@@ -562,8 +562,31 @@
       vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @media print {
-      .translation-wrap { display: none !important; }
+    .translation-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 2mm;
+      margin-bottom: 1mm;
+      flex-wrap: wrap;
+    }
+    .translation-actions button {
+      background: rgba(7,63,58,0.08);
+      border: 1px solid rgba(7,63,58,0.15);
+      color: var(--green);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: system-ui, sans-serif;
+    }
+    .translation-actions button:hover {
+      background: rgba(7,63,58,0.15);
+    }
+    .translation-actions button.primary-action {
+      background: linear-gradient(135deg, #bd9144, #0f7a68);
+      color: #fff;
+      border-color: transparent;
     }
 
     @media print {
@@ -945,10 +968,18 @@ Kingdom of Saudi Arabia</p>
         var ta = document.createElement('textarea');
         ta.id = 'translation-textarea';
         ta.className = 'translation-box';
-        ta.readOnly = true;
         ta.setAttribute('dir', lang === 'ur' || lang === 'ar' ? 'rtl' : 'ltr');
+        ta.style.cssText = 'width:100%;min-height:60mm;border:1px solid rgba(189,145,68,0.35);border-radius:3mm;background:rgba(255,250,240,0.6);padding:4mm;font-size:11pt;line-height:1.8;color:var(--ink);resize:vertical;outline:none;';
         wrap.appendChild(label);
         wrap.appendChild(ta);
+
+        var actions = document.createElement('div');
+        actions.className = 'translation-actions';
+        actions.innerHTML =
+          '<button class="primary-action" onclick="replaceWithTranslation()">🔄 استبدال النص الأصلي</button>' +
+          '<button onclick="copyTranslation()">📋 نسخ الترجمة</button>' +
+          '<button onclick="removeTranslationBox()">🗑️ إخفاء</button>';
+        wrap.appendChild(actions);
         surface.appendChild(wrap);
         var idx = 0;
         function typeWriter() {
@@ -962,6 +993,26 @@ Kingdom of Saudi Arabia</p>
         }
         typeWriter();
       }
+
+      window.replaceWithTranslation = function() {
+        var transTa = document.getElementById('translation-textarea');
+        var origTa = document.getElementById('doc-textarea');
+        if (!transTa || !origTa) { showToast('⚠️ لا يوجد نص للاستبدال'); return; }
+        if (confirm('هل تريد استبدال النص الأصلي بالترجمة؟')) {
+          origTa.value = transTa.value;
+          localStorage.setItem('thiqqah-doc-text', origTa.value);
+          removeTranslationBox();
+          showToast('✅ تم استبدال النص الأصلي بالترجمة');
+        }
+      };
+
+      window.copyTranslation = function() {
+        var transTa = document.getElementById('translation-textarea');
+        if (!transTa) { showToast('⚠️ لا يوجد ترجمة'); return; }
+        transTa.select();
+        document.execCommand('copy');
+        showToast('✅ تم نسخ الترجمة');
+      };
 
       function translateChunks(text, pair, callback, onError) {
         var chunkSize = 450;
