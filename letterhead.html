@@ -421,8 +421,8 @@
       display: inline-block;
       min-width: 80px;
     }
-    .meta-row.ref-row .meta-label,
     .meta-row.ref-row .meta-value { color: #c0392b; font-weight: 700; }
+    .meta-row.ref-row .meta-label { color: var(--green); font-weight: 700; }
 
     /* === مساحة الكتابة === */
     .writing-surface {
@@ -707,6 +707,7 @@
     <button onclick="addNewPage()">➕ صفحة</button>
     <button onclick="toggleLines()">📏 خطوط</button>
     <button onclick="toggleDark()">🌙 داكن</button>
+    <input type="color" id="text-color" value="#12243a" onchange="changeTextColor(this.value)" title="لون الخط" style="width:32px;height:24px;padding:0;border:none;background:transparent;cursor:pointer;">
     <button onclick="insertTemplate()">📄 قالب</button>
     <button onclick="openSigModal()">✍️ توقيع</button>
     <button onclick="insertStampInline()">🔴 ختم</button>
@@ -792,7 +793,6 @@ Kingdom of Saudi Arabia</p>
 
         <div class="meta-fields">
           <div class="meta-row"><span class="meta-label">التاريخ:</span><span class="meta-value" id="meta-date"></span></div>
-          <div class="meta-row"><span class="meta-label">إلى السيد/ـة:</span><span class="meta-value" contenteditable="true"></span></div>
           <div class="meta-row"><span class="meta-label">الموضوع:</span><span class="meta-value" contenteditable="true"></span></div>
           <div class="meta-row ref-row"><span class="meta-label">الرقم المرجعي:</span><span class="meta-value" id="meta-ref" contenteditable="true"></span></div>
         </div>
@@ -903,15 +903,14 @@ Kingdom of Saudi Arabia</p>
       };
 
       window.generateRef = function() {
-        if (!ensureDoc()) return;
         var year = new Date().getFullYear(), num = Math.floor(1000 + Math.random() * 9000);
         var ref = 'THQ-' + year + '-' + num;
         localStorage.setItem('thiqqah-last-ref', ref);
-        document.getElementById('meta-ref').textContent = ref;
+        var metaRef = document.getElementById('meta-ref');
+        if (metaRef) metaRef.textContent = ref;
         var archive = JSON.parse(localStorage.getItem('thiqqah-archive') || '[]');
         archive.unshift({ ref: ref, date: new Date().toLocaleDateString('ar-SA'), ts: Date.now() });
         localStorage.setItem('thiqqah-archive', JSON.stringify(archive.slice(0, 50)));
-        insertAtCursor('<div><strong>رقم الصادر:</strong> ' + ref + '</div><div><br></div>');
         showToast('✅ رقم الصادر: ' + ref);
       };
 
@@ -982,20 +981,10 @@ Kingdom of Saudi Arabia</p>
         content.contentEditable = writingMode ? 'true' : 'false';
         content.style.fontFamily = getActiveDoc().style.fontFamily || "'Noto Naskh Arabic', Tahoma, serif";
         if (isLined) clone.querySelector('.writing-surface').classList.add('lined');
-        clone.querySelector('.stamp').id = 'stamp-' + pageCounter;
-        clone.querySelector('.stamp .stamp-date').id = 'stamp-date-' + pageCounter;
-        clone.querySelector('.signature-canvas').id = 'sig-canvas-' + pageCounter;
-        clone.querySelectorAll('.signature-actions button').forEach(function(b) {
-          var onclick = b.getAttribute('onclick');
-          if (onclick && onclick.includes('clearSignature')) b.setAttribute('onclick', 'clearSignature(' + pageCounter + ')');
-          if (onclick && onclick.includes('insertSignature')) b.setAttribute('onclick', 'insertSignature(' + pageCounter + ')');
-        });
         document.querySelectorAll('.sheet').forEach(function(s, i) {
           s.querySelector('.page-number').textContent = (i+1) + ' / ' + (pageCounter);
         });
         container.appendChild(clone);
-        setupStampDrag(clone.querySelector('.stamp'));
-        setupSignature(clone.querySelector('.signature-canvas'));
         showToast('✅ صفحة ' + pageCounter);
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
       };
@@ -1034,6 +1023,14 @@ Kingdom of Saudi Arabia</p>
       window.changeFont = function(font) {
         document.querySelectorAll('.doc-content').forEach(function(d) { d.style.fontFamily = "'" + font + "', Tahoma, serif"; });
         localStorage.setItem('thiqqah-doc-font', font); showToast('✅ الخط: ' + font);
+      };
+
+      window.changeTextColor = function(color) {
+        var sel = window.getSelection();
+        if (sel.rangeCount) {
+          document.execCommand('foreColor', false, color);
+        }
+        showToast('✅ لون الخط تغيّر');
       };
 
       window.toggleLines = function() {
@@ -1222,9 +1219,12 @@ Kingdom of Saudi Arabia</p>
         document.getElementById('meta-date').textContent = dateStr;
         var saved = localStorage.getItem('thiqqah-doc-html');
         var doc = getActiveDoc();
-        if (saved && doc) { doc.innerHTML = saved; showToast('💾 نص محفوظ — اضغط كتابة'); }
+        if (saved && doc) { doc.innerHTML = saved; }
         var savedFont = localStorage.getItem('thiqqah-doc-font');
         if (savedFont) { document.getElementById('font-select').value = savedFont; changeFont(savedFont); }
+        if (doc) {
+          doc.addEventListener('input', function() { pushUndo(); });
+        }
       });
     })();
   </script>
