@@ -563,6 +563,24 @@
       cursor: pointer;
     }
 
+    /* === ختم الغرفة التجارية === */
+    .stamp-inline {
+      display: inline-block;
+      width: 130px;
+      height: 130px;
+      vertical-align: middle;
+      margin: 6px;
+      opacity: 0.92;
+      cursor: move;
+      user-select: none;
+      transform: rotate(-6deg);
+    }
+    .stamp-inline svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
     /* === تذييل فاخر === */
     .footer-zone {
       position: absolute;
@@ -1124,9 +1142,20 @@ Kingdom of Saudi Arabia</p>
       window.insertStampInline = function() {
         var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
         var id = 'stamp-' + Date.now();
-        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" style="cursor:move;">' +
-          '<div class="stamp-inner2"><div class="st">مكتب ثقة الذهبية</div><div class="st-sub">موثق رقمياً</div><div class="st-date">' + dateStr + '</div></div>' +
-          '</div>';
+        var svg = '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
+          '<circle cx="100" cy="100" r="96" fill="none" stroke="#c0392b" stroke-width="3"/>' +
+          '<circle cx="100" cy="100" r="88" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3"/>' +
+          '<path id="topArc" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>' +
+          '<text fill="#c0392b" font-size="13" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
+          '<textPath href="#topArc" startOffset="50%" text-anchor="middle">مكتب ثقة الذهبية للخدمات العامة</textPath></text>' +
+          '<path id="botArc" d="M 40,105 A 60,60 0 0,0 160,105" fill="none"/>' +
+          '<text fill="#c0392b" font-size="11" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
+          '<textPath href="#botArc" startOffset="50%" text-anchor="middle">تأسيس الشركات في السعودية</textPath></text>' +
+          '<line x1="45" y1="100" x2="155" y2="100" stroke="#c0392b" stroke-width="1"/>' +
+          '<text x="100" y="92" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
+          '<text x="100" y="118" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
+          '</svg>';
+        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" style="cursor:move;">' + svg + '</div>';
         insertAtCursor(html + '<span>&nbsp;</span>');
         showToast('🔴 تم إدراج الختم — اسحبه للمكان المناسب');
       };
