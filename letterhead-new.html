@@ -414,7 +414,13 @@
       color: var(--ink);
       font-family: "Noto Naskh Arabic", serif;
       min-width: 80px;
+      max-width: 220px;
       text-align: right;
+      display: inline-block;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      line-height: 1.4;
     }
     .meta-row .meta-value:empty::before {
       content: '\200B';
