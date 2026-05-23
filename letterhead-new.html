@@ -692,6 +692,8 @@
     <button onclick="toggleLines()">📏 خطوط</button>
     <button onclick="toggleDark()">🌙 داكن</button>
     <button onclick="insertTemplate()">📄 قالب</button>
+    <button onclick="openSigModal()">✍️ توقيع</button>
+    <button onclick="insertStampInline()">🔴 ختم</button>
     <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
     <div class="toolbar-divider"></div>
     <label class="toolbar-check">
@@ -778,22 +780,7 @@ Kingdom of Saudi Arabia</p>
           <div class="doc-content" id="doc-1" dir="rtl"></div>
         </div>
 
-        <div class="signature-wrap">
-          <span class="sig-label">التوقيع:</span>
-          <canvas class="signature-canvas" id="sig-canvas-1" width="280" height="80"></canvas>
-          <div class="signature-actions">
-            <button onclick="clearSignature(1)">🗑️ مسح</button>
-            <button onclick="insertSignature(1)">✓ إدراج في النص</button>
-          </div>
-        </div>
-
-        <div class="stamp" id="stamp-1">
-          <div class="stamp-inner">
-            <div class="stamp-title">مكتب ثقة الذهبية</div>
-            <div class="stamp-sub">موثق رقمياً</div>
-            <div class="stamp-date" id="stamp-date-1"></div>
-          </div>
-        </div>
+        <!-- التوقيع والختم يُدرجان ديناميكياً في النص -->
 
         <div class="footer-zone">
           <div class="footer-rule"></div>
@@ -818,6 +805,18 @@ Kingdom of Saudi Arabia</p>
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="sig-modal-overlay" id="sig-modal-overlay" onclick="if(event.target===this)closeSigModal()">
+    <div class="sig-modal">
+      <h3>✍️ ارسم توقيعك</h3>
+      <canvas id="sig-modal-canvas" width="400" height="150"></canvas>
+      <div class="sig-modal-actions">
+        <button class="btn-secondary" onclick="clearSigModal()">🗑️ مسح</button>
+        <button class="btn-secondary" onclick="closeSigModal()">إلغاء</button>
+        <button class="btn-primary" onclick="confirmSigModal()">✓ إدراج</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function() {
@@ -996,61 +995,86 @@ Kingdom of Saudi Arabia</p>
       window.shareLinkedIn = function() { showToast('💼 انسخ النص'); copyText(); };
       window.shareChatGPT = function() { var t = shareText(); if (!t) return; window.open('https://chat.openai.com/?q=' + encodeURIComponent('حسّن هذا النص:\n\n' + t.substring(0,4000)), '_blank'); };
 
-      /* === ختم قابل للسحب === */
-      function setupStampDrag(stamp) {
-        if (!stamp) return;
-        var isDragging = false, startX, startY, origLeft, origTop;
-        stamp.addEventListener('mousedown', function(e) {
-          isDragging = true;
-          startX = e.clientX; startY = e.clientY;
-          var rect = stamp.getBoundingClientRect();
-          var parent = stamp.offsetParent.getBoundingClientRect();
-          origLeft = stamp.offsetLeft; origTop = stamp.offsetTop;
-          stamp.style.cursor = 'grabbing'; e.preventDefault();
-        });
-        document.addEventListener('mousemove', function(e) {
-          if (!isDragging) return;
-          stamp.style.left = (origLeft + e.clientX - startX) + 'px';
-          stamp.style.top = (origTop + e.clientY - startY) + 'px';
-          stamp.style.right = 'auto'; stamp.style.bottom = 'auto';
-        });
-        document.addEventListener('mouseup', function() { isDragging = false; if (stamp) stamp.style.cursor = 'move'; });
-      }
-
-      /* === توقيع === */
-      function setupSignature(canvas) {
-        if (!canvas) return;
-        var ctx = canvas.getContext('2d'), drawing = false;
-        var getPos = function(e) {
-          var rect = canvas.getBoundingClientRect();
-          var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-          var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-          return { x: clientX - rect.left, y: clientY - rect.top };
-        };
-        var start = function(e) { drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
-        var draw = function(e) { if (!drawing) return; var p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#12243a'; ctx.lineWidth = 1.5; ctx.stroke(); e.preventDefault(); };
-        var stop = function() { drawing = false; };
-        canvas.addEventListener('mousedown', start);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stop);
-        canvas.addEventListener('mouseleave', stop);
-        canvas.addEventListener('touchstart', start, {passive:false});
-        canvas.addEventListener('touchmove', draw, {passive:false});
-        canvas.addEventListener('touchend', stop);
-      }
-
-      window.clearSignature = function(id) {
-        var canvas = document.getElementById('sig-canvas-' + id);
-        if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      /* === توقيع modal === */
+      var sigModalCtx = null;
+      window.openSigModal = function() {
+        var overlay = document.getElementById('sig-modal-overlay');
+        overlay.classList.add('open');
+        var canvas = document.getElementById('sig-modal-canvas');
+        if (!sigModalCtx) {
+          sigModalCtx = canvas.getContext('2d');
+          var drawing = false;
+          var getPos = function(e) {
+            var rect = canvas.getBoundingClientRect();
+            var cx = e.touches ? e.touches[0].clientX : e.clientX;
+            var cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: cx - rect.left, y: cy - rect.top };
+          };
+          var start = function(e) { drawing = true; var p = getPos(e); sigModalCtx.beginPath(); sigModalCtx.moveTo(p.x, p.y); e.preventDefault(); };
+          var draw = function(e) { if (!drawing) return; var p = getPos(e); sigModalCtx.lineTo(p.x, p.y); sigModalCtx.strokeStyle = '#12243a'; sigModalCtx.lineWidth = 2; sigModalCtx.stroke(); e.preventDefault(); };
+          var stop = function() { drawing = false; };
+          canvas.addEventListener('mousedown', start);
+          canvas.addEventListener('mousemove', draw);
+          canvas.addEventListener('mouseup', stop);
+          canvas.addEventListener('mouseleave', stop);
+          canvas.addEventListener('touchstart', start, {passive:false});
+          canvas.addEventListener('touchmove', draw, {passive:false});
+          canvas.addEventListener('touchend', stop);
+        }
+        sigModalCtx.clearRect(0, 0, canvas.width, canvas.height);
       };
-
-      window.insertSignature = function(id) {
-        var canvas = document.getElementById('sig-canvas-' + id);
+      window.closeSigModal = function() {
+        document.getElementById('sig-modal-overlay').classList.remove('open');
+      };
+      window.clearSigModal = function() {
+        var canvas = document.getElementById('sig-modal-canvas');
+        if (sigModalCtx && canvas) sigModalCtx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+      window.confirmSigModal = function() {
+        var canvas = document.getElementById('sig-modal-canvas');
         if (!canvas) return;
         var dataUrl = canvas.toDataURL('image/png');
-        insertAtCursor('<div style="margin:10px 0;"><img src="' + dataUrl + '" style="max-width:200px;height:auto;" alt="توقيع"></div>');
+        var id = 'sig-' + Date.now();
+        var html = '<div class="sig-inline" id="' + id + '"><img src="' + dataUrl + '" style="max-width:180px;height:auto;display:block;" alt="توقيع"><div class="sig-actions"><button onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button></div></div>';
+        insertAtCursor(html);
+        closeSigModal();
         showToast('✅ تم إدراج التوقيع');
       };
+      window.removeInlineSig = function(id) {
+        var el = document.getElementById(id); if (el) el.remove();
+      };
+
+      /* === ختم مُدرج ديناميكياً === */
+      window.insertStampInline = function() {
+        var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
+        var id = 'stamp-' + Date.now();
+        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" style="cursor:move;">' +
+          '<div class="stamp-inner2"><div class="st">مكتب ثقة الذهبية</div><div class="st-sub">موثق رقمياً</div><div class="st-date">' + dateStr + '</div></div>' +
+          '</div>';
+        insertAtCursor(html + '<span>&nbsp;</span>');
+        showToast('🔴 تم إدراج الختم — اسحبه للمكان المناسب');
+      };
+      window.stampDragStart = function(e) {
+        e.dataTransfer.setData('text/plain', e.target.id);
+        e.dataTransfer.effectAllowed = 'move';
+      };
+      document.addEventListener('dragover', function(e) { e.preventDefault(); });
+      document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var id = e.dataTransfer.getData('text/plain');
+        var stamp = document.getElementById(id);
+        if (stamp && stamp.classList.contains('stamp-inline')) {
+          var target = e.target.closest('.doc-content');
+          if (target) {
+            var range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            if (range) {
+              var sel = window.getSelection();
+              sel.removeAllRanges(); sel.addRange(range);
+              range.insertNode(stamp);
+            }
+          }
+        }
+      });
 
       /* === ترجمة === */
       function removeTransSheet() { var ts = document.getElementById('translation-sheet'); if (ts) ts.remove(); }
@@ -1117,14 +1141,11 @@ Kingdom of Saudi Arabia</p>
       document.addEventListener('DOMContentLoaded', function() {
         var d = new Date(), dateStr = d.toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
         document.getElementById('meta-date').textContent = dateStr;
-        document.getElementById('stamp-date-1').textContent = dateStr;
         var saved = localStorage.getItem('thiqqah-doc-html');
         var doc = getActiveDoc();
         if (saved && doc) { doc.innerHTML = saved; showToast('💾 نص محفوظ — اضغط كتابة'); }
         var savedFont = localStorage.getItem('thiqqah-doc-font');
         if (savedFont) { document.getElementById('font-select').value = savedFont; changeFont(savedFont); }
-        setupStampDrag(document.getElementById('stamp-1'));
-        setupSignature(document.getElementById('sig-canvas-1'));
       });
     })();
   </script>
