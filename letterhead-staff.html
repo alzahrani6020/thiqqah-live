@@ -1383,6 +1383,7 @@ Kingdom of Saudi Arabia</p>
       if (overlay) overlay.classList.remove('open');
     };
     window.submitDocToManager = function() {
+      console.log('=== submitDocToManager clicked ===');
       var name = document.getElementById('send-name').value.trim();
       var email = document.getElementById('send-email').value.trim();
       var note = document.getElementById('send-note').value.trim();
@@ -1391,9 +1392,10 @@ Kingdom of Saudi Arabia</p>
       sheets.forEach(function(s) { docHtml += s.outerHTML; });
       var subject = document.getElementById('meta-subject') ? document.getElementById('meta-subject').textContent.trim() : '';
       var ref = document.getElementById('meta-ref') ? document.getElementById('meta-ref').textContent.trim() : '';
+      console.log('name:', name, 'docHtml length:', docHtml.length, 'firebase:', typeof firebase, 'db:', typeof db);
       if (!name) { showToast('⚠️ أدخل اسمك'); return; }
       if (!docHtml) { showToast('⚠️ لا يوجد محتوى'); return; }
-      if (typeof firebase === 'undefined' || !db) { showToast('❌ Firebase غير متصل'); return; }
+      if (typeof firebase === 'undefined' || !db) { showToast('❌ Firebase غير متصل'); console.error('Firebase not ready:', typeof firebase, db); return; }
       localStorage.setItem('thiqqah-staff-name', name);
       localStorage.setItem('thiqqah-staff-email', email);
       showToast('⏳ جاري الإرسال...');
