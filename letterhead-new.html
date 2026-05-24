@@ -1341,6 +1341,16 @@ Kingdom of Saudi Arabia</p>
         if (doc) {
           doc.addEventListener('input', function() { pushUndo(); });
         }
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+          firebase.auth().signInAnonymously().then(function() {
+            startInboxListener();
+          }).catch(function(err) {
+            console.log('Auth:', err.code);
+            setTimeout(startInboxListener, 2000);
+          });
+        } else {
+          setTimeout(startInboxListener, 3000);
+        }
       });
     })();
     /* === Firebase: وارد المراسلات (Admin) === */
@@ -1415,11 +1425,37 @@ Kingdom of Saudi Arabia</p>
         showToast('❌ فشل الإرجاع: ' + (err.message || err));
       });
     };
+
+    /* === إشعار + badge للوارد === */
+    window._pendingUnsub = null;
+    window.startInboxListener = function() {
+      if (!db || window._pendingUnsub) return;
+      window._pendingUnsub = db.collection('documents').where('status', '==', 'pending').onSnapshot(function(snap) {
+        var count = snap.size;
+        var btn = document.querySelector('button[onclick="toggleInboxPanel()"]');
+        if (btn) {
+          var old = btn.querySelector('.inbox-badge');
+          if (old) old.remove();
+          if (count > 0) {
+            var badge = document.createElement('span');
+            badge.className = 'inbox-badge';
+            badge.textContent = count;
+            badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#c0392b;color:#fff;border-radius:50%;font-size:10px;font-weight:700;margin-left:4px;padding:0 4px;vertical-align:middle;box-shadow:0 1px 4px rgba(192,57,43,0.4);';
+            btn.appendChild(badge);
+          }
+        }
+        if (typeof window._prevPendingCount !== 'undefined' && count > window._prevPendingCount) {
+          showToast('📨 وصل مستند جديد يحتاج توقيع!');
+        }
+        window._prevPendingCount = count;
+      }, function(err) { console.log('Inbox listener:', err); });
+    };
   </script>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="lib/firebase-config.js"></script>
 
   <!-- Inbox Panel -->
