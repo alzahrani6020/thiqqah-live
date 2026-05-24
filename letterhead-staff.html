@@ -779,6 +779,7 @@
       </div>
     </div>
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
+    <button onclick="openSendModal()" class="primary" style="background:linear-gradient(135deg,#0a665d,#1a5276);">📨 إرسال للمدير</button>
   </div>
 
   <div id="pages-container">
@@ -1326,6 +1327,73 @@ Kingdom of Saudi Arabia</p>
         }
       });
     })();
+    /* === Firebase: إرسال مستند للمدير === */
+    window.openSendModal = function() {
+      var overlay = document.getElementById('send-modal-overlay');
+      if (overlay) overlay.classList.add('open');
+    };
+    window.closeSendModal = function() {
+      var overlay = document.getElementById('send-modal-overlay');
+      if (overlay) overlay.classList.remove('open');
+    };
+    window.submitDocToManager = function() {
+      var name = document.getElementById('send-name').value.trim();
+      var email = document.getElementById('send-email').value.trim();
+      var note = document.getElementById('send-note').value.trim();
+      var docHtml = '';
+      var sheets = document.querySelectorAll('.sheet[data-page]');
+      sheets.forEach(function(s) { docHtml += s.outerHTML; });
+      var subject = document.getElementById('meta-subject') ? document.getElementById('meta-subject').textContent.trim() : '';
+      var ref = document.getElementById('meta-ref') ? document.getElementById('meta-ref').textContent.trim() : '';
+      if (!name) { showToast('⚠️ أدخل اسمك'); return; }
+      if (!docHtml) { showToast('⚠️ لا يوجد محتوى'); return; }
+      if (typeof firebase === 'undefined' || !db) { showToast('❌ Firebase غير مفعّل — راجع الإعدادات'); return; }
+      showToast('⏳ جاري الإرسال...');
+      db.collection('documents').add({
+        html: docHtml,
+        subject: subject,
+        ref: ref,
+        senderName: name,
+        senderEmail: email,
+        note: note,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        showToast('✅ تم إرسال المستند للمدير');
+        closeSendModal();
+      }).catch(function(err) {
+        showToast('❌ فشل الإرسال: ' + (err.message || err));
+      });
+    };
   </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="lib/firebase-config.js"></script>
+
+  <!-- Send Modal -->
+  <div class="sig-modal-overlay" id="send-modal-overlay" onclick="if(event.target===this)closeSendModal()">
+    <div class="sig-modal" style="max-width:420px;">
+      <h3>📨 إرسال المستند للمدير</h3>
+      <div style="margin:12px 0;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:var(--muted);">الاسم *</label>
+        <input type="text" id="send-name" placeholder="اسم الموظف" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;">
+      </div>
+      <div style="margin:12px 0;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:var(--muted);">البريد الإلكتروني</label>
+        <input type="email" id="send-email" placeholder="email@example.com" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;direction:ltr;text-align:left;">
+      </div>
+      <div style="margin:12px 0;">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:var(--muted);">ملاحظة</label>
+        <textarea id="send-note" placeholder="ملاحظة للمدير..." rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="sig-modal-actions" style="margin-top:16px;">
+        <button class="btn-secondary" onclick="closeSendModal()">إلغاء</button>
+        <button class="btn-primary" onclick="submitDocToManager()">📨 إرسال</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

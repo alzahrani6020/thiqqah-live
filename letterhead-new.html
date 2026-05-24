@@ -795,6 +795,7 @@
     </div>
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
     <button onclick="exportPDF()" class="primary">📄 PDF</button>
+    <button onclick="toggleInboxPanel()" class="primary" style="background:linear-gradient(135deg,#1a5276,#7d3c98);">📥 وارد المراسلات</button>
   </div>
 
   <div id="pages-container">
@@ -1342,6 +1343,104 @@ Kingdom of Saudi Arabia</p>
         }
       });
     })();
+    /* === Firebase: وارد المراسلات (Admin) === */
+    window.toggleInboxPanel = function() {
+      var panel = document.getElementById('inbox-panel');
+      if (!panel) return;
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) loadInboxDocs();
+    };
+    window.loadInboxDocs = function() {
+      var list = document.getElementById('inbox-list');
+      if (!list) return;
+      if (typeof firebase === 'undefined' || !db) { list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ Firebase غير مفعّل</div>'; return; }
+      list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">⏳ جاري التحميل...</div>';
+      db.collection('documents').orderBy('createdAt','desc').limit(50).get().then(function(snap) {
+        if (snap.empty) { list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">📭 لا توجد مراسلات</div>'; return; }
+        var html = '';
+        snap.forEach(function(doc) {
+          var d = doc.data();
+          var date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-SA') : '-';
+          var statusColor = d.status === 'pending' ? '#c0392b' : (d.status === 'stamped' ? '#0a665d' : '#bd9144');
+          var statusText = d.status === 'pending' ? '⏳ بانتظار المراجعة' : (d.status === 'stamped' ? '✅ موثّق' : '📤 مُرجع');
+          html += '<div class="inbox-item" data-id="' + doc.id + '" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background=\'#f8f5ef\'" onmouseout="this.style.background=\'\'" onclick="openInboxDoc(\'' + doc.id + '\')">' +
+            '<div style="font-weight:700;font-size:12px;margin-bottom:3px;">' + (d.subject || 'بدون موضوع') + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;">' +
+              '<span>👤 ' + (d.senderName || '—') + '</span>' +
+              '<span>📅 ' + date + '</span>' +
+              '<span style="color:' + statusColor + ';font-weight:700;">' + statusText + '</span>' +
+            '</div>' +
+          '</div>';
+        });
+        list.innerHTML = html;
+      }).catch(function(err) {
+        list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ ' + (err.message || err) + '</div>';
+      });
+    };
+    window.openInboxDoc = function(docId) {
+      if (typeof firebase === 'undefined' || !db) return;
+      db.collection('documents').doc(docId).get().then(function(doc) {
+        if (!doc.exists) { showToast('❌ المستند غير موجود'); return; }
+        var d = doc.data();
+        window.currentInboxDocId = docId;
+        window.currentInboxDocData = d;
+        var container = document.getElementById('pages-container');
+        container.innerHTML = d.html || '<div class="sheet" data-page="1"><div class="sheet-inner"><div class="doc-content" contenteditable="true">لا يوجد محتوى</div></div></div>';
+        if (d.subject) { var ms = document.getElementById('meta-subject'); if (ms) ms.textContent = d.subject; }
+        if (d.ref) { var mr = document.getElementById('meta-ref'); if (mr) mr.textContent = d.ref; }
+        showToast('✅ تم فتح المستند — أضف ختم/توقيع ثم ارجعه');
+        document.getElementById('inbox-actions').style.display = 'flex';
+      });
+    };
+    window.stampAndReturnDoc = function() {
+      if (!window.currentInboxDocId) { showToast('⚠️ افتح مستنداً أولاً'); return; }
+      insertStampInline();
+      showToast('🔴 تم إدراج الختم — الآن أرجع المستند');
+    };
+    window.returnDocToStaff = function() {
+      if (!window.currentInboxDocId) { showToast('⚠️ افتح مستنداً أولاً'); return; }
+      var docHtml = '';
+      var sheets = document.querySelectorAll('.sheet[data-page]');
+      sheets.forEach(function(s) { docHtml += s.outerHTML; });
+      db.collection('documents').doc(window.currentInboxDocId).update({
+        html: docHtml,
+        status: 'stamped',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        showToast('✅ تم إرجاع المستند الموثّق للموظف');
+        document.getElementById('inbox-actions').style.display = 'none';
+        window.currentInboxDocId = null;
+        loadInboxDocs();
+      }).catch(function(err) {
+        showToast('❌ فشل الإرجاع: ' + (err.message || err));
+      });
+    };
   </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="lib/firebase-config.js"></script>
+
+  <!-- Inbox Panel -->
+  <div id="inbox-panel" style="position:fixed;top:0;left:0;height:100%;width:320px;max-width:90vw;background:#fff;box-shadow:4px 0 24px rgba(0,0,0,0.18);z-index:9999;transform:translateX(-110%);transition:transform 0.3s ease;direction:rtl;font-family:system-ui,sans-serif;font-size:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,#0f1a2e,#1a2a4a);color:#fff;">
+      <strong style="font-size:14px;">📥 وارد المراسلات</strong>
+      <button onclick="toggleInboxPanel()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="padding:10px 12px;background:#f8f5ef;border-bottom:1px solid rgba(0,0,0,0.08);display:flex;gap:6px;">
+      <button onclick="loadInboxDocs()" style="flex:1;padding:6px 8px;background:#0a665d;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ تحديث</button>
+    </div>
+    <div id="inbox-list" style="overflow-y:auto;height:calc(100% - 110px);"></div>
+    <div id="inbox-actions" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:12px;background:#fff;border-top:1px solid rgba(0,0,0,0.08);gap:6px;flex-direction:column;">
+      <button onclick="stampAndReturnDoc()" style="padding:8px;background:linear-gradient(135deg,#c0392b,#a93226);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🔴 إدراج ختم</button>
+      <button onclick="openSigModal()" style="padding:8px;background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✍️ إدراج توقيع</button>
+      <button onclick="returnDocToStaff()" style="padding:8px;background:linear-gradient(135deg,#0a665d,#0f7a68);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">📤 إرجاع للموظف</button>
+    </div>
+  </div>
+  <style>
+    #inbox-panel.open { transform: translateX(0) !important; }
+    @media (max-width: 480px) { #inbox-panel { width: 100vw; } }
+  </style>
 </body>
 </html>
