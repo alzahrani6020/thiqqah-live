@@ -1357,17 +1357,7 @@ Kingdom of Saudi Arabia</p>
       var ref = document.getElementById('meta-ref') ? document.getElementById('meta-ref').textContent.trim() : '';
       if (!name) { showToast('⚠️ أدخل اسمك'); return; }
       if (!docHtml) { showToast('⚠️ لا يوجد محتوى'); return; }
-      if (typeof firebase === 'undefined' || !db) { showToast('❌ Firebase غير متصل — جاري المحاولة...'); return; }
-      var user = firebase.auth().currentUser;
-      if (!user) {
-        showToast('⏳ جاري تسجيل الدخول...');
-        firebase.auth().signInAnonymously().then(function() {
-          submitDocToManager();
-        }).catch(function(err) {
-          showToast('❌ فشل تسجيل الدخول: ' + err.message);
-        });
-        return;
-      }
+      if (typeof firebase === 'undefined' || !db) { showToast('❌ Firebase غير متصل'); return; }
       localStorage.setItem('thiqqah-staff-name', name);
       localStorage.setItem('thiqqah-staff-email', email);
       showToast('⏳ جاري الإرسال...');
