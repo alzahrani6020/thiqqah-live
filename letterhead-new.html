@@ -1209,9 +1209,19 @@ Kingdom of Saudi Arabia</p>
         var dataUrl = canvas.toDataURL('image/png');
         var id = 'sig-' + Date.now();
         var html = '<div class="sig-inline" id="' + id + '"><img src="' + dataUrl + '" style="max-width:180px;height:auto;display:block;" alt="توقيع"><div class="sig-actions"><button onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button></div></div>';
-        insertAtCursor(html);
+        var sheets = document.querySelectorAll('.sheet');
+        var lastSheet = sheets[sheets.length - 1];
+        var doc = lastSheet ? lastSheet.querySelector('.doc-content') : document.querySelector('.doc-content');
+        if (doc) {
+          var wrap = document.createElement('div');
+          wrap.style.cssText = 'text-align:center;margin-top:20px;';
+          wrap.innerHTML = html;
+          doc.appendChild(wrap);
+        } else {
+          insertAtCursor(html);
+        }
         closeSigModal();
-        showToast('✅ تم إدراج التوقيع');
+        showToast('✅ تم إدراج التوقيع في أسفل الصفحة');
       };
       window.removeInlineSig = function(id) {
         pushUndo();
@@ -1431,7 +1441,7 @@ Kingdom of Saudi Arabia</p>
       sheets.forEach(function(s) { docHtml += s.outerHTML; });
       var updateData = {
         html: docHtml,
-        status: 'stamped',
+        status: 'returned',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       if (recipient) updateData.recipient = recipient;
