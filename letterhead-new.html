@@ -1367,7 +1367,7 @@ Kingdom of Saudi Arabia</p>
       if (typeof firebase === 'undefined' || !db) { list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ Firebase غير مفعّل</div>'; return; }
       list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">⏳ جاري التحميل...</div>';
       if (window._inboxUnsub) { window._inboxUnsub(); }
-      window._inboxUnsub = db.collection('documents').orderBy('createdAt','desc').limit(50).onSnapshot(function(snap) {
+      window._inboxUnsub = db.collection('documents').limit(50).onSnapshot(function(snap) {
         if (snap.empty) { list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">📭 لا توجد مراسلات</div>'; return; }
         var html = '';
         snap.forEach(function(doc) {
