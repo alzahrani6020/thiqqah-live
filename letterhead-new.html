@@ -1234,8 +1234,12 @@ Kingdom of Saudi Arabia</p>
           '<text x="100" y="92" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
           '<text x="100" y="118" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
           '</svg>';
-        var html = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStamp(this)" title="انقر مرتين لتثبيت الختم" style="cursor:move;">' + svg + '</div>';
-        insertAtCursor(html + '<span>&nbsp;</span>');
+        var wrapper = document.createElement('div');
+        wrapper.style.cssText = 'text-align:center;margin:20px 0;';
+        wrapper.innerHTML = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStamp(this)" title="انقر مرتين لتثبيت الختم" style="cursor:move;display:inline-block;">' + svg + '</div>';
+        var doc = document.querySelector('.doc-content');
+        if (doc) { doc.appendChild(wrapper); }
+        else { insertAtCursor(wrapper.outerHTML); }
         showToast('🔴 تم إدراج الختم — اسحبه ثم انقر عليه مرتين لتثبيته');
       };
 
