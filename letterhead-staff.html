@@ -816,6 +816,7 @@
     </div>
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
     <button onclick="openSendModal()" class="primary" style="background:linear-gradient(135deg,#0a665d,#1a5276);">📨 إرسال للمدير</button>
+    <button onclick="toggleMyInbox()" class="primary" style="background:linear-gradient(135deg,#7d3c98,#1a5276);">📥 واردي</button>
   </div>
 
   <div id="pages-container">
@@ -1406,6 +1407,19 @@ Kingdom of Saudi Arabia</p>
     </div>
   </div>
 
+  <!-- My Inbox Panel (Staff) -->
+  <div id="my-inbox-panel" style="position:fixed;top:0;left:0;height:100%;width:320px;max-width:90vw;background:#fff;box-shadow:4px 0 24px rgba(0,0,0,0.18);z-index:9999;transform:translateX(-110%);transition:transform 0.3s ease;direction:rtl;font-family:system-ui,sans-serif;font-size:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,#7d3c98,#1a5276);color:#fff;">
+      <strong style="font-size:14px;">📥 واردي — مستندات موثقة</strong>
+      <button onclick="toggleMyInbox()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="my-inbox-list" style="overflow-y:auto;height:calc(100% - 60px);"></div>
+  </div>
+  <style>
+    #my-inbox-panel.open { transform: translateX(0) !important; }
+    @media (max-width: 480px) { #my-inbox-panel { width: 100vw; } }
+  </style>
+
   <script>
     window.openSendModal = function() {
       var overlay = document.getElementById('send-modal-overlay');
@@ -1445,6 +1459,47 @@ Kingdom of Saudi Arabia</p>
         closeSendModal();
       }).catch(function(err) {
         showToast('❌ فشل الإرسال: ' + (err.message || err));
+      });
+    };
+    window.toggleMyInbox = function() {
+      var panel = document.getElementById('my-inbox-panel');
+      if (!panel) return;
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) loadMyInbox();
+    };
+    window.loadMyInbox = function() {
+      var list = document.getElementById('my-inbox-list');
+      if (!list) return;
+      if (typeof firebase === 'undefined' || !db) { list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ Firebase غير متصل</div>'; return; }
+      list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">⏳ جاري التحميل...</div>';
+      if (window._myInboxUnsub) window._myInboxUnsub();
+      window._myInboxUnsub = db.collection('documents').where('status', '==', 'stamped').limit(50).onSnapshot(function(snap) {
+        if (snap.empty) { list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">📭 لا توجد مستندات موثقة</div>'; return; }
+        var html = '';
+        snap.forEach(function(doc) {
+          var d = doc.data();
+          var date = d.updatedAt ? new Date(d.updatedAt.seconds*1000).toLocaleDateString('ar-SA') : '-';
+          html += '<div style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;" onclick="loadStampedDoc(\'' + doc.id + '\')">' +
+            '<div style="font-weight:700;font-size:12px;margin-bottom:3px;">' + (d.subject || 'بدون موضوع') + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);">👤 ' + (d.senderName || '—') + ' · 📅 ' + date + '</div>' +
+          '</div>';
+        });
+        list.innerHTML = html;
+      }, function(err) {
+        list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ ' + (err.message || err) + '</div>';
+      });
+    };
+    window.loadStampedDoc = function(docId) {
+      if (!db) return;
+      db.collection('documents').doc(docId).get().then(function(doc) {
+        if (!doc.exists) return;
+        var d = doc.data();
+        var container = document.getElementById('pages-container');
+        container.innerHTML = d.html || '<div class="sheet" data-page="1"><div class="sheet-inner"><div class="doc-content" contenteditable="true">لا يوجد محتوى</div></div></div>';
+        if (d.subject) { var ms = document.getElementById('meta-subject'); if (ms) ms.textContent = d.subject; }
+        if (d.ref) { var mr = document.getElementById('meta-ref'); if (mr) mr.textContent = d.ref; }
+        showToast('✅ تم فتح المستند الموثّق');
+        toggleMyInbox();
       });
     };
   </script>

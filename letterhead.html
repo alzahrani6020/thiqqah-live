@@ -1415,14 +1415,17 @@ Kingdom of Saudi Arabia</p>
     };
     window.returnDocToStaff = function() {
       if (!window.currentInboxDocId) { showToast('⚠️ افتح مستنداً أولاً'); return; }
+      var recipient = document.getElementById('return-recipient') ? document.getElementById('return-recipient').value.trim() : '';
       var docHtml = '';
       var sheets = document.querySelectorAll('.sheet[data-page]');
       sheets.forEach(function(s) { docHtml += s.outerHTML; });
-      db.collection('documents').doc(window.currentInboxDocId).update({
+      var updateData = {
         html: docHtml,
         status: 'stamped',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function() {
+      };
+      if (recipient) updateData.recipient = recipient;
+      db.collection('documents').doc(window.currentInboxDocId).update(updateData).then(function() {
         showToast('✅ تم إرجاع المستند الموثّق للموظف');
         document.getElementById('inbox-actions').style.display = 'none';
         window.currentInboxDocId = null;
@@ -1477,6 +1480,7 @@ Kingdom of Saudi Arabia</p>
     <div id="inbox-actions" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:12px;background:#fff;border-top:1px solid rgba(0,0,0,0.08);gap:6px;flex-direction:column;">
       <button onclick="stampAndReturnDoc()" style="padding:8px;background:linear-gradient(135deg,#c0392b,#a93226);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🔴 إدراج ختم</button>
       <button onclick="openSigModal()" style="padding:8px;background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✍️ إدراج توقيع</button>
+      <input type="text" id="return-recipient" placeholder="بريد/اسم الموظف (اختياري)" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:11px;font-family:inherit;direction:rtl;">
       <button onclick="returnDocToStaff()" style="padding:8px;background:linear-gradient(135deg,#0a665d,#0f7a68);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">📤 إرجاع للموظف</button>
     </div>
   </div>
