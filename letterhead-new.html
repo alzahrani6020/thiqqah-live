@@ -1214,11 +1214,13 @@ Kingdom of Saudi Arabia</p>
         showToast('✅ تم إدراج التوقيع');
       };
       window.removeInlineSig = function(id) {
+        pushUndo();
         var el = document.getElementById(id); if (el) el.remove();
       };
 
       /* === ختم مُدرج ديناميكياً === */
       window.insertStampInline = function() {
+        pushUndo();
         var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
         var id = 'stamp-' + Date.now();
         var svg = '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
@@ -1251,6 +1253,7 @@ Kingdom of Saudi Arabia</p>
       };
 
       window.lockStamp = function(el) {
+        pushUndo();
         el.setAttribute('draggable', 'false');
         el.style.cursor = 'default';
         el.removeAttribute('ondblclick');
