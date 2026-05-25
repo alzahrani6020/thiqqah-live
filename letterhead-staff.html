@@ -905,6 +905,7 @@ Kingdom of Saudi Arabia</p>
         t.classList.add('show');
         setTimeout(function() { t.classList.remove('show'); }, 2000);
       }
+      window.showToast = showToast;
 
       function getActiveDoc() { return document.querySelector('.doc-content'); }
       function getText() { var d = getActiveDoc(); return d ? d.innerText.trim() : ''; }
