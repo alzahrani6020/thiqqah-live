@@ -1062,10 +1062,9 @@ Kingdom of Saudi Arabia</p>
       });
 
       window.exportPDF = function() {
-        showToast('📄 جاري التحضير...');
-        setTimeout(function() {
-          window.print();
-        }, 300);
+        var toast = document.getElementById('toast');
+        if (toast) toast.classList.remove('show');
+        window.print();
       };
 
       window.downloadPDF = function() {
