@@ -1203,9 +1203,16 @@ Kingdom of Saudi Arabia</p>
         var canvas = document.getElementById('sig-modal-canvas');
         if (sigModalCtx && canvas) sigModalCtx.clearRect(0, 0, canvas.width, canvas.height);
       };
+      function isCanvasBlank(canvas) {
+        var ctx = canvas.getContext('2d');
+        var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        for (var i = 3; i < data.length; i += 4) { if (data[i] !== 0) return false; }
+        return true;
+      }
       window.confirmSigModal = function() {
         var canvas = document.getElementById('sig-modal-canvas');
         if (!canvas) return;
+        if (isCanvasBlank(canvas)) { showToast('⚠️ ارسم التوقيع أولاً'); return; }
         var dataUrl = canvas.toDataURL('image/png');
         var id = 'sig-' + Date.now();
         var html = '<div class="sig-inline" id="' + id + '"><img src="' + dataUrl + '" style="max-width:180px;height:auto;display:block;" alt="توقيع"><div class="sig-actions"><button onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button></div></div>';
