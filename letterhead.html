@@ -869,6 +869,31 @@
       border-color: var(--gold-3, #d4a85c);
       box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold-3, #d4a85c);
     }
+    .stamp-color-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .stamp-color-btn {
+      min-width: 70px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      background: rgba(255,255,255,0.6);
+      color: var(--c);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+      box-shadow: inset 0 0 0 1px var(--c);
+    }
+    .stamp-color-btn.active {
+      border-color: var(--gold-3, #d4a85c);
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold-3, #d4a85c), inset 0 0 0 2px var(--c);
+    }
 
     @media print {
       body { background: #fff; }
@@ -1061,6 +1086,23 @@ Kingdom of Saudi Arabia</p>
         <button class="btn-success" onclick="saveSignature()">🔒 تثبيت</button>
         <button class="btn-secondary" onclick="closeSigModal()">إلغاء</button>
         <button class="btn-primary" onclick="confirmSigModal()">✓ إدراج</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sig-modal-overlay" id="stamp-color-modal-overlay" onclick="if(event.target===this)closeStampColorModal()">
+    <div class="sig-modal" style="max-width:420px;">
+      <h3>🔴 اختر لون الختم</h3>
+      <div class="stamp-color-options">
+        <button class="stamp-color-btn active" style="--c:#c0392b;" onclick="setStampColor('#c0392b',this)">أحمر</button>
+        <button class="stamp-color-btn" style="--c:#1a5276;" onclick="setStampColor('#1a5276',this)">أزرق</button>
+        <button class="stamp-color-btn" style="--c:#0a665d;" onclick="setStampColor('#0a665d',this)">أخضر</button>
+        <button class="stamp-color-btn" style="--c:#12243a;" onclick="setStampColor('#12243a',this)">أسود</button>
+        <button class="stamp-color-btn" style="--c:#bd9144;" onclick="setStampColor('#bd9144',this)">ذهبي</button>
+      </div>
+      <div class="sig-modal-actions">
+        <button class="btn-secondary" onclick="closeStampColorModal()">إلغاء</button>
+        <button class="btn-primary" onclick="confirmStampColor()">✓ إدراج</button>
       </div>
     </div>
   </div>
@@ -1529,25 +1571,43 @@ Kingdom of Saudi Arabia</p>
       };
 
       /* === ختم مُدرج ديناميكياً === */
+      var pendingStampColor = '#c0392b';
       window.insertStampInline = function() {
+        pendingStampColor = '#c0392b';
+        document.querySelectorAll('.stamp-color-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelector('.stamp-color-btn[style*="#c0392b"]').classList.add('active');
+        document.getElementById('stamp-color-modal-overlay').classList.add('open');
+      };
+      window.setStampColor = function(color, btn) {
+        pendingStampColor = color;
+        document.querySelectorAll('.stamp-color-btn').forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+      };
+      window.closeStampColorModal = function() {
+        document.getElementById('stamp-color-modal-overlay').classList.remove('open');
+      };
+      window.confirmStampColor = function() {
+        closeStampColorModal();
+        renderStampInline(pendingStampColor);
+      };
+      function renderStampInline(color) {
         pushUndo();
         var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
         var id = 'stamp-' + Date.now();
         var svg = '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
-          '<circle cx="100" cy="100" r="96" fill="none" stroke="#c0392b" stroke-width="3"/>' +
-          '<circle cx="100" cy="100" r="88" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3"/>' +
-          '<path id="topArc" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>' +
-          '<text fill="#c0392b" font-size="13" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
-          '<textPath href="#topArc" startOffset="50%" text-anchor="middle">مكتب ثقة الذهبية للخدمات العامة</textPath></text>' +
-          '<path id="botArc" d="M 40,105 A 60,60 0 0,0 160,105" fill="none"/>' +
-          '<text fill="#c0392b" font-size="11" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
-          '<textPath href="#botArc" startOffset="50%" text-anchor="middle">تأسيس الشركات في السعودية</textPath></text>' +
-          '<line x1="45" y1="100" x2="155" y2="100" stroke="#c0392b" stroke-width="1"/>' +
-          '<text x="100" y="92" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
-          '<text x="100" y="118" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
+          '<circle cx="100" cy="100" r="96" fill="none" stroke="' + color + '" stroke-width="3"/>' +
+          '<circle cx="100" cy="100" r="88" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-dasharray="4,3"/>' +
+          '<path id="topArc' + id + '" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>' +
+          '<text fill="' + color + '" font-size="13" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
+          '<textPath href="#topArc' + id + '" startOffset="50%" text-anchor="middle">مكتب ثقة الذهبية للخدمات العامة</textPath></text>' +
+          '<path id="botArc' + id + '" d="M 40,105 A 60,60 0 0,0 160,105" fill="none"/>' +
+          '<text fill="' + color + '" font-size="11" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' +
+          '<textPath href="#botArc' + id + '" startOffset="50%" text-anchor="middle">تأسيس الشركات في السعودية</textPath></text>' +
+          '<line x1="45" y1="100" x2="155" y2="100" stroke="' + color + '" stroke-width="1"/>' +
+          '<text x="100" y="92" text-anchor="middle" fill="' + color + '" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
+          '<text x="100" y="118" text-anchor="middle" fill="' + color + '" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
           '</svg>';
         var stampHtml = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStampInline(\'' + id + '\')" title="انقر مرتين لتثبيت الختم" style="cursor:move;"><div class="stamp-svg-wrap">' + svg + '</div><div class="stamp-actions"><button onclick="resizeStamp(\'' + id + '\', -10)" title="تصغير">−</button><button onclick="copyStampToClipboard(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><button class="danger" onclick="removeStamp(\'' + id + '\')">🗑️</button><button onclick="resizeStamp(\'' + id + '\', 10)" title="تكبير">+</button></div></div>';
-        /* --- ضع الختم في نهاية آخر صفحة --- */
         var sheets = document.querySelectorAll('.sheet');
         var lastSheet = sheets[sheets.length - 1];
         var doc = lastSheet ? lastSheet.querySelector('.doc-content') : document.querySelector('.doc-content');
@@ -1559,7 +1619,7 @@ Kingdom of Saudi Arabia</p>
         } else {
           insertAtCursor(stampHtml + '<span>&nbsp;</span>');
         }
-        showToast('🔴 تم إدراج الختم في أسفل الصفحة — اسحبه ثم انقر عليه مرتين لتثبيته');
+        showToast('🔴 تم إدراج الختم');
       };
 
       window.lockStampInline = function(id) {
