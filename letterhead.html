@@ -572,18 +572,54 @@
     .stamp-inline {
       display: inline-block;
       width: 130px;
-      height: 130px;
+      min-width: 60px;
       vertical-align: middle;
       margin: 6px;
       opacity: 0.92;
       cursor: move;
       user-select: none;
       transform: rotate(-6deg);
+      resize: both;
+      overflow: hidden;
+      border: 1px dashed transparent;
+      border-radius: 6px;
+    }
+    .stamp-inline:hover { border-color: rgba(189, 145, 68, 0.5); }
+    .stamp-inline.locked { cursor: default; resize: none; border-color: transparent; }
+    .stamp-inline .stamp-svg-wrap {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
     }
     .stamp-inline svg {
       width: 100%;
       height: 100%;
       display: block;
+    }
+    .stamp-inline .stamp-actions {
+      text-align: center;
+      margin-top: 4px;
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      flex-wrap: wrap;
+      transform: rotate(6deg);
+    }
+    .stamp-inline .stamp-actions button {
+      background: rgba(7, 63, 58, 0.08);
+      color: var(--green, #073f3a);
+      border: 1px solid rgba(7, 63, 58, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 24px;
+    }
+    .stamp-inline .stamp-actions button.danger {
+      background: rgba(192, 57, 43, 0.08);
+      color: #c0392b;
+      border-color: rgba(192, 57, 43, 0.2);
     }
 
     /* === تذييل فاخر === */
@@ -1445,7 +1481,7 @@ Kingdom of Saudi Arabia</p>
           '<text x="100" y="92" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
           '<text x="100" y="118" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
           '</svg>';
-        var stampHtml = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStamp(this)" title="انقر مرتين لتثبيت الختم" style="cursor:move;">' + svg + '</div>';
+        var stampHtml = '<div class="stamp-inline" id="' + id + '" draggable="true" ondragstart="stampDragStart(event)" ondblclick="lockStampInline(\'' + id + '\')" title="انقر مرتين لتثبيت الختم" style="cursor:move;"><div class="stamp-svg-wrap">' + svg + '</div><div class="stamp-actions"><button onclick="resizeStamp(\'' + id + '\', -10)" title="تصغير">−</button><button onclick="copyStampToClipboard(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><button class="danger" onclick="removeStamp(\'' + id + '\')">🗑️</button><button onclick="resizeStamp(\'' + id + '\', 10)" title="تكبير">+</button></div></div>';
         /* --- ضع الختم في نهاية آخر صفحة --- */
         var sheets = document.querySelectorAll('.sheet');
         var lastSheet = sheets[sheets.length - 1];
@@ -1461,13 +1497,58 @@ Kingdom of Saudi Arabia</p>
         showToast('🔴 تم إدراج الختم في أسفل الصفحة — اسحبه ثم انقر عليه مرتين لتثبيته');
       };
 
-      window.lockStamp = function(el) {
+      window.lockStampInline = function(id) {
         pushUndo();
+        var el = document.getElementById(id);
+        if (!el) return;
         el.setAttribute('draggable', 'false');
         el.style.cursor = 'default';
         el.removeAttribute('ondblclick');
         el.removeAttribute('title');
+        el.classList.add('locked');
+        var actions = el.querySelector('.stamp-actions');
+        if (actions) actions.style.display = 'none';
         showToast('🔒 تم تثبيت الختم');
+      };
+      window.lockStamp = function(el) { lockStampInline(el.id); };
+      window.removeStamp = function(id) {
+        pushUndo();
+        var el = document.getElementById(id); if (el) el.remove();
+      };
+      window.resizeStamp = function(id, delta) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var current = parseInt(el.style.width || el.offsetWidth, 10);
+        var next = Math.max(60, current + delta);
+        el.style.width = next + 'px';
+      };
+      window.copyStampToClipboard = function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var svgWrap = el.querySelector('.stamp-svg-wrap');
+        if (!svgWrap) return;
+        var svg = svgWrap.querySelector('svg');
+        if (!svg) return;
+        var serializer = new XMLSerializer();
+        var svgData = serializer.serializeToString(svg);
+        var canvas = document.createElement('canvas');
+        canvas.width = 400; canvas.height = 400;
+        var ctx = canvas.getContext('2d');
+        var img = new Image();
+        img.onload = function() {
+          ctx.drawImage(img, 0, 0, 400, 400);
+          canvas.toBlob(function(blob) {
+            if (!blob) { showToast('⚠️ فشل إنشاء الصورة'); return; }
+            if (navigator.clipboard && window.ClipboardItem) {
+              navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+                .then(function() { showToast('✅ تم نسخ الختم للحافظة'); })
+                .catch(function() { showToast('⚠️ فشل النسخ، جرّب Chrome'); });
+            } else {
+              showToast('⚠️ المتصفح لا يدعم نسخ الصورة');
+            }
+          }, 'image/png');
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
       };
       window.stampDragStart = function(e) {
         e.dataTransfer.setData('text/plain', e.target.id);
