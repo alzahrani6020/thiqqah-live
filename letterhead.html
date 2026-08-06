@@ -1874,13 +1874,17 @@ Kingdom of Saudi Arabia</p>
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           sigs.forEach(function(sig) {
             var sigImg = sig.querySelector('img');
-            var ratioX = canvas.width / wrap.clientWidth;
-            var ratioY = canvas.height / wrap.clientHeight;
-            var sx = sig.offsetLeft * ratioX;
-            var sy = sig.offsetTop * ratioY;
+            var imgRect = img.getBoundingClientRect();
+            var wrapRect = wrap.getBoundingClientRect();
+            var offsetX = imgRect.left - wrapRect.left;
+            var offsetY = imgRect.top - wrapRect.top;
+            var ratioX = canvas.width / imgRect.width;
+            var ratioY = canvas.height / imgRect.height;
+            var centerX = (sig.offsetLeft + sig.clientWidth / 2 - offsetX) * ratioX;
+            var centerY = (sig.offsetTop + sig.clientHeight / 2 - offsetY) * ratioY;
             var sw = sig.clientWidth * ratioX;
             var sh = sig.clientHeight * ratioY;
-            ctx.drawImage(sigImg, sx, sy, sw, sh);
+            ctx.drawImage(sigImg, centerX - sw / 2, centerY - sh / 2, sw, sh);
           });
           var outImg = canvas.toDataURL('image/jpeg', 0.95);
           if (count > 0) pdf.addPage([dim.width, dim.height], dim.width > dim.height ? 'l' : 'p');
