@@ -1363,7 +1363,7 @@ Kingdom of Saudi Arabia</p>
           dataUrl = canvas.toDataURL('image/png');
         }
         var id = 'sig-' + Date.now();
-        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ">📋 نسخ</button><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
+        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="duplicateInlineSig(\'' + id + '\')" title="تكرار">⧉ تكرار</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
         var doc = getActiveDoc();
         if (doc && doc.contains(window.getSelection().anchorNode)) {
           insertAtCursor(html + '<br>');
@@ -1394,7 +1394,7 @@ Kingdom of Saudi Arabia</p>
         var next = Math.max(60, current + delta);
         el.style.width = next + 'px';
       };
-      window.copyInlineSig = function(id) {
+      window.duplicateInlineSig = function(id) {
         pushUndo();
         var el = document.getElementById(id);
         if (!el) return;
@@ -1406,7 +1406,25 @@ Kingdom of Saudi Arabia</p>
           btn.setAttribute('onclick', onclick.split(id).join(newId));
         });
         el.parentNode.insertBefore(clone, el.nextSibling);
-        showToast('✅ تم نسخ التوقيع');
+        showToast('✅ تم تكرار التوقيع');
+      };
+      window.copyInlineSig = function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var img = el.querySelector('img');
+        if (!img || !img.src) return;
+        if (navigator.clipboard && window.ClipboardItem) {
+          fetch(img.src)
+            .then(function(res) { return res.blob(); })
+            .then(function(blob) {
+              var item = new ClipboardItem({ 'image/png': blob });
+              return navigator.clipboard.write([item]);
+            })
+            .then(function() { showToast('✅ تم نسخ التوقيع للحافظة'); })
+            .catch(function() { showToast('⚠️ فشل النسخ، جرّب المتصفح Chrome'); });
+        } else {
+          showToast('⚠️ المتصفح لا يدعم نسخ الصورة مباشرة');
+        }
       };
 
       /* === ختم مُدرج ديناميكياً === */
