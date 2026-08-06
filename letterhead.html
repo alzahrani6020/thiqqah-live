@@ -908,6 +908,72 @@
       background: rgba(255,255,255,0.95);
       box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold-3, #d4a85c), inset 0 0 0 2px var(--c);
     }
+    .pdf-viewer-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      margin: 10px 0;
+      border: 1px dashed var(--gold-3, #d4a85c);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .pdf-viewer-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .pdf-sig-overlay {
+      position: absolute;
+      width: 160px;
+      cursor: move;
+      z-index: 10;
+      touch-action: none;
+      resize: both;
+      overflow: hidden;
+      border: 1px dashed transparent;
+    }
+    .pdf-sig-overlay:hover { border-color: var(--gold-3, #d4a85c); }
+    .pdf-sig-overlay img {
+      width: 100%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+    }
+    .pdf-sig-actions {
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .pdf-sig-actions button {
+      background: #0f1a2e;
+      color: #fff;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .pdf-save-bar {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f1a2e;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      z-index: 10001;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+    .pdf-save-bar.show { display: flex; }
 
     @media print {
       body { background: #fff; }
@@ -965,6 +1031,8 @@
     <button onclick="insertTemplate()">📄 قالب</button>
     <button onclick="openSigModal()">✍️ توقيع</button>
     <button onclick="insertStampInline()">🔴 ختم</button>
+    <button onclick="document.getElementById('pdf-upload').click()">📄 رفع PDF</button>
+    <input type="file" id="pdf-upload" accept="application/pdf" style="display:none" onchange="handlePdfUpload(this)">
     <button onclick="undoDoc()">↩️ تراجع</button>
     <button onclick="redoDoc()">↪️ إعادة</button>
     <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
@@ -1623,6 +1691,129 @@ Kingdom of Saudi Arabia</p>
         }
       };
 
+      /* === رفع PDF وتوقيعه === */
+      var currentPdfDataUrl = null;
+      window.handlePdfUpload = function(input) {
+        var file = input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var typedArray = new Uint8Array(e.target.result);
+          renderPdfPage(typedArray);
+        };
+        reader.readAsArrayBuffer(file);
+      };
+      function renderPdfPage(typedArray) {
+        pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
+          return pdf.getPage(1);
+        }).then(function(page) {
+          var scale = 2;
+          var viewport = page.getViewport({ scale: scale });
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          var renderTask = page.render({ canvasContext: ctx, viewport: viewport });
+          return renderTask.promise.then(function() { return canvas.toDataURL('image/png'); });
+        }).then(function(dataUrl) {
+          currentPdfDataUrl = dataUrl;
+          var doc = getActiveDoc();
+          if (doc) {
+            doc.innerHTML = '';
+            var wrap = document.createElement('div');
+            wrap.className = 'pdf-viewer-wrap';
+            wrap.id = 'pdf-viewer-wrap';
+            wrap.innerHTML = '<img id="pdf-page-img" src="' + dataUrl + '" alt="PDF page">';
+            doc.appendChild(wrap);
+            addPdfSignatureOverlay(wrap);
+            document.getElementById('pdf-save-bar').classList.add('show');
+            showToast('✅ تم رفع PDF — اسحب التوقيع إلى المكان المطلوب');
+          }
+        }).catch(function(err) {
+          showToast('❌ فشل قراءة PDF');
+          console.error(err);
+        });
+      }
+      function addPdfSignatureOverlay(wrap) {
+        var saved = localStorage.getItem('thiqqah-signature');
+        if (!saved) {
+          showToast('⚠️ ارسم توقيعك أولاً من زر ✍️ توقيع');
+          return;
+        }
+        var sigId = 'pdf-sig-' + Date.now();
+        var overlay = document.createElement('div');
+        overlay.className = 'pdf-sig-overlay';
+        overlay.id = sigId;
+        overlay.style.top = '20px';
+        overlay.style.left = '20px';
+        overlay.innerHTML = '<img src="' + saved + '" alt="توقيع"><div class="pdf-sig-actions"><button onclick="resizeSig(\'' + sigId + '\', -10)">−</button><button onclick="resizeSig(\'' + sigId + '\', 10)">+</button><button onclick="removeInlineSig(\'' + sigId + '\')">🗑️</button></div>';
+        wrap.appendChild(overlay);
+        makeDraggable(overlay, wrap);
+      }
+      function makeDraggable(el, container) {
+        var isDragging = false, startX, startY, initialLeft, initialTop;
+        el.addEventListener('mousedown', function(e) {
+          isDragging = true;
+          startX = e.clientX; startY = e.clientY;
+          initialLeft = el.offsetLeft; initialTop = el.offsetTop;
+          e.preventDefault();
+        });
+        document.addEventListener('mousemove', function(e) {
+          if (!isDragging) return;
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+          el.style.left = Math.max(0, Math.min(container.clientWidth - el.clientWidth, initialLeft + dx)) + 'px';
+          el.style.top = Math.max(0, Math.min(container.clientHeight - el.clientHeight, initialTop + dy)) + 'px';
+        });
+        document.addEventListener('mouseup', function() { isDragging = false; });
+        el.addEventListener('touchstart', function(e) {
+          isDragging = true;
+          startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+          initialLeft = el.offsetLeft; initialTop = el.offsetTop;
+          e.preventDefault();
+        }, {passive:false});
+        document.addEventListener('touchmove', function(e) {
+          if (!isDragging) return;
+          var dx = e.touches[0].clientX - startX;
+          var dy = e.touches[0].clientY - startY;
+          el.style.left = Math.max(0, Math.min(container.clientWidth - el.clientWidth, initialLeft + dx)) + 'px';
+          el.style.top = Math.max(0, Math.min(container.clientHeight - el.clientHeight, initialTop + dy)) + 'px';
+        }, {passive:false});
+        document.addEventListener('touchend', function() { isDragging = false; });
+      }
+      window.saveSignedPdf = function() {
+        var wrap = document.getElementById('pdf-viewer-wrap');
+        if (!wrap) return;
+        var img = wrap.querySelector('img');
+        var sig = wrap.querySelector('.pdf-sig-overlay');
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (sig) {
+          var sigImg = sig.querySelector('img');
+          var ratioX = canvas.width / wrap.clientWidth;
+          var ratioY = canvas.height / wrap.clientHeight;
+          var sx = sig.offsetLeft * ratioX;
+          var sy = sig.offsetTop * ratioY;
+          var sw = sig.clientWidth * ratioX;
+          var sh = sig.clientHeight * ratioY;
+          ctx.drawImage(sigImg, sx, sy, sw, sh);
+        }
+        var outImg = canvas.toDataURL('image/jpeg', 0.95);
+        var pdf = new jspdf.jsPDF({ orientation: canvas.width > canvas.height ? 'l' : 'p', unit: 'px', format: [canvas.width, canvas.height] });
+        pdf.addImage(outImg, 'JPEG', 0, 0, canvas.width, canvas.height);
+        pdf.save('signed-document.pdf');
+        showToast('✅ تم حفظ PDF الموقّع');
+      };
+      window.closePdfViewer = function() {
+        var wrap = document.getElementById('pdf-viewer-wrap');
+        if (wrap) wrap.remove();
+        document.getElementById('pdf-save-bar').classList.remove('show');
+        currentPdfDataUrl = null;
+      };
+
       /* === ختم مُدرج ديناميكياً === */
       var pendingStampColor = '#c0392b';
       window.insertStampInline = function() {
@@ -1944,6 +2135,15 @@ Kingdom of Saudi Arabia</p>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="lib/firebase-config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+  <div class="pdf-save-bar" id="pdf-save-bar">
+    <span>📄 تم رفع PDF — ضع التوقيع ثم احفظ</span>
+    <button onclick="saveSignedPdf()" style="background:linear-gradient(135deg,#0a665d,#0f7a68);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:700;cursor:pointer;">💾 حفظ PDF</button>
+    <button onclick="closePdfViewer()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:700;cursor:pointer;">إغلاق</button>
+  </div>
 
   <!-- Inbox Panel -->
   <div id="inbox-panel" style="position:fixed;top:0;left:0;height:100%;width:320px;max-width:90vw;background:#fff;box-shadow:4px 0 24px rgba(0,0,0,0.18);z-index:9999;transform:translateX(-110%);transition:transform 0.3s ease;direction:rtl;font-family:system-ui,sans-serif;font-size:12px;">
