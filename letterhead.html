@@ -1747,9 +1747,13 @@ Kingdom of Saudi Arabia</p>
         pdfPageDimensions = [];
         pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
           var total = pdf.numPages;
-          var promises = [];
-          for (var i = 1; i <= total; i++) {
-            promises.push(pdf.getPage(i).then(function(page) {
+          var pages = [];
+          function renderNext(i) {
+            if (i > total) {
+              finishRender(pages);
+              return;
+            }
+            pdf.getPage(i).then(function(page) {
               var scale = 2;
               var viewport = page.getViewport({ scale: scale });
               var canvas = document.createElement('canvas');
@@ -1757,33 +1761,36 @@ Kingdom of Saudi Arabia</p>
               canvas.width = viewport.width;
               canvas.height = viewport.height;
               return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
-                return { url: canvas.toDataURL('image/png'), width: viewport.width, height: viewport.height, pageNum: page.pageNumber };
+                pages.push({ url: canvas.toDataURL('image/png'), width: viewport.width, height: viewport.height, pageNum: i });
+                renderNext(i + 1);
               });
-            }));
-          }
-          return Promise.all(promises);
-        }).then(function(pages) {
-          pages.sort(function(a, b) { return a.pageNum - b.pageNum; });
-          pdfPageDataUrls = pages.map(function(p) { return p.url; });
-          pdfPageDimensions = pages.map(function(p) { return { width: p.width, height: p.height }; });
-          var doc = getActiveDoc();
-          if (doc) {
-            doc.innerHTML = '';
-            pages.forEach(function(p) {
-              var wrap = document.createElement('div');
-              wrap.className = 'pdf-viewer-wrap';
-              wrap.dataset.page = p.pageNum;
-              wrap.innerHTML = '<img src="' + p.url + '" alt="PDF page ' + p.pageNum + '">';
-              doc.appendChild(wrap);
-              addPdfSignatureOverlay(wrap);
+            }).catch(function() {
+              showToast('⚠️ تعذر قراءة الصفحة ' + i);
+              renderNext(i + 1);
             });
-            document.getElementById('pdf-save-bar').classList.add('show');
-            showToast('✅ تم رفع ' + pages.length + ' صفحة. مرّر للأسفل لرؤية بقية الصفحات');
           }
+          renderNext(1);
         }).catch(function(err) {
           showToast('❌ فشل قراءة PDF');
           console.error(err);
         });
+      }
+      function finishRender(pages) {
+        pdfPageDataUrls = pages.map(function(p) { return p.url; });
+        pdfPageDimensions = pages.map(function(p) { return { width: p.width, height: p.height }; });
+        var doc = getActiveDoc();
+        if (doc) {
+          doc.innerHTML = '';
+          pages.forEach(function(p) {
+            var wrap = document.createElement('div');
+            wrap.className = 'pdf-viewer-wrap';
+            wrap.dataset.page = p.pageNum;
+            wrap.innerHTML = '<div class="pdf-page-label">صفحة ' + p.pageNum + ' من ' + pages.length + '</div><img src="' + p.url + '" alt="PDF page ' + p.pageNum + '"><button class="btn-add-sig-to-page" onclick="addPdfSignatureOverlayTo(this)">✍️ أضف توقيع لهذه الصفحة</button>';
+            doc.appendChild(wrap);
+          });
+          document.getElementById('pdf-save-bar').classList.add('show');
+          showToast('✅ تم رفع ' + pages.length + ' صفحة. مرّر للأسفل لرؤية بقية الصفحات');
+        }
       }
       window.addPdfSignatureOverlayTo = function(btn) {
         var wrap = btn.closest('.pdf-viewer-wrap');
