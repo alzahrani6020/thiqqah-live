@@ -771,6 +771,20 @@
     .sig-inline .sig-actions button:hover {
       background: rgba(7, 63, 58, 0.15);
     }
+    .sig-inline .sig-actions .sig-color-btns {
+      display: inline-flex;
+      gap: 3px;
+      align-items: center;
+    }
+    .sig-inline .sig-actions .color-dot-sm {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      padding: 0;
+      min-width: auto;
+      border: 1px solid rgba(0,0,0,0.15);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
     .sig-inline .sig-actions button.danger {
       background: rgba(192, 57, 43, 0.08);
       color: #c0392b;
@@ -1524,7 +1538,7 @@ Kingdom of Saudi Arabia</p>
           dataUrl = canvas.toDataURL('image/png');
         }
         var id = 'sig-' + Date.now();
-        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="duplicateInlineSig(\'' + id + '\')" title="تكرار">⧉ تكرار</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
+        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="duplicateInlineSig(\'' + id + '\')" title="تكرار">⧉ تكرار</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><span class="sig-color-btns"><button class="color-dot-sm" style="background:#12243a" onclick="recolorInlineSig(\'' + id + '\',\'#12243a\')" title="أسود"></button><button class="color-dot-sm" style="background:#0066cc" onclick="recolorInlineSig(\'' + id + '\',\'#0066cc\')" title="أزرق"></button><button class="color-dot-sm" style="background:#c0392b" onclick="recolorInlineSig(\'' + id + '\',\'#c0392b\')" title="أحمر"></button><button class="color-dot-sm" style="background:#073f3a" onclick="recolorInlineSig(\'' + id + '\',\'#073f3a\')" title="أخضر"></button></span><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
         var doc = getActiveDoc();
         if (doc && doc.contains(window.getSelection().anchorNode)) {
           insertAtCursor(html + '<br>');
@@ -1554,6 +1568,27 @@ Kingdom of Saudi Arabia</p>
         var current = parseInt(el.style.width || el.offsetWidth, 10);
         var next = Math.max(60, current + delta);
         el.style.width = next + 'px';
+      };
+      window.recolorInlineSig = function(id, color) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var img = el.querySelector('img');
+        if (!img || !img.src) return;
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        var source = new Image();
+        source.crossOrigin = 'anonymous';
+        source.onload = function() {
+          canvas.width = source.naturalWidth;
+          canvas.height = source.naturalHeight;
+          ctx.drawImage(source, 0, 0);
+          ctx.globalCompositeOperation = 'source-in';
+          ctx.fillStyle = color;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          img.src = canvas.toDataURL('image/png');
+          showToast('✅ تم تغيير لون التوقيع');
+        };
+        source.src = img.src;
       };
       window.duplicateInlineSig = function(id) {
         pushUndo();
