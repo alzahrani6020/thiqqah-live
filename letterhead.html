@@ -1363,7 +1363,7 @@ Kingdom of Saudi Arabia</p>
           dataUrl = canvas.toDataURL('image/png');
         }
         var id = 'sig-' + Date.now();
-        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
+        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ">📋 نسخ</button><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
         var doc = getActiveDoc();
         if (doc && doc.contains(window.getSelection().anchorNode)) {
           insertAtCursor(html + '<br>');
@@ -1393,6 +1393,20 @@ Kingdom of Saudi Arabia</p>
         var current = parseInt(el.style.width || el.offsetWidth, 10);
         var next = Math.max(60, current + delta);
         el.style.width = next + 'px';
+      };
+      window.copyInlineSig = function(id) {
+        pushUndo();
+        var el = document.getElementById(id);
+        if (!el) return;
+        var clone = el.cloneNode(true);
+        var newId = 'sig-' + Date.now();
+        clone.id = newId;
+        clone.querySelectorAll('button').forEach(function(btn) {
+          var onclick = btn.getAttribute('onclick') || '';
+          btn.setAttribute('onclick', onclick.split(id).join(newId));
+        });
+        el.parentNode.insertBefore(clone, el.nextSibling);
+        showToast('✅ تم نسخ التوقيع');
       };
 
       /* === ختم مُدرج ديناميكياً === */
