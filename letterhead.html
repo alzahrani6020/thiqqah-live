@@ -782,6 +782,10 @@
       background: linear-gradient(135deg, #0a665d, #0f7a68);
       color: #fff;
     }
+    .sig-modal-actions .btn-success {
+      background: linear-gradient(135deg, #bd9144, #d4a85c);
+      color: #fff;
+    }
 
     @media print {
       body { background: #fff; }
@@ -964,6 +968,7 @@ Kingdom of Saudi Arabia</p>
       <canvas id="sig-modal-canvas" width="400" height="150"></canvas>
       <div class="sig-modal-actions">
         <button class="btn-secondary" onclick="clearSigModal()">🗑️ مسح</button>
+        <button class="btn-success" onclick="saveSignature()">🔒 تثبيت</button>
         <button class="btn-secondary" onclick="closeSigModal()">إلغاء</button>
         <button class="btn-primary" onclick="confirmSigModal()">✓ إدراج</button>
       </div>
@@ -1289,6 +1294,26 @@ Kingdom of Saudi Arabia</p>
           canvas.addEventListener('touchend', stop);
         }
         sigModalCtx.clearRect(0, 0, canvas.width, canvas.height);
+        loadSavedSignature();
+      };
+      function loadSavedSignature() {
+        var saved = localStorage.getItem('thiqqah-signature');
+        if (!saved) return;
+        var canvas = document.getElementById('sig-modal-canvas');
+        var img = new Image();
+        img.onload = function() {
+          sigModalCtx.clearRect(0, 0, canvas.width, canvas.height);
+          sigModalCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = saved;
+      }
+      window.saveSignature = function() {
+        var canvas = document.getElementById('sig-modal-canvas');
+        if (!canvas) return;
+        if (isCanvasBlank(canvas)) { showToast('⚠️ ارسم التوقيع أولاً'); return; }
+        var dataUrl = canvas.toDataURL('image/png');
+        localStorage.setItem('thiqqah-signature', dataUrl);
+        showToast('🔒 تم تثبيت التوقيع وسيُحفظ للاستخدام القادم');
       };
       window.closeSigModal = function() {
         document.getElementById('sig-modal-overlay').classList.remove('open');
@@ -1306,8 +1331,14 @@ Kingdom of Saudi Arabia</p>
       window.confirmSigModal = function() {
         var canvas = document.getElementById('sig-modal-canvas');
         if (!canvas) return;
-        if (isCanvasBlank(canvas)) { showToast('⚠️ ارسم التوقيع أولاً'); return; }
-        var dataUrl = canvas.toDataURL('image/png');
+        var dataUrl = '';
+        if (isCanvasBlank(canvas)) {
+          var saved = localStorage.getItem('thiqqah-signature');
+          if (!saved) { showToast('⚠️ ارسم التوقيع أولاً'); return; }
+          dataUrl = saved;
+        } else {
+          dataUrl = canvas.toDataURL('image/png');
+        }
         var id = 'sig-' + Date.now();
         var html = '<span class="sig-inline" id="' + id + '" contenteditable="false"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="removeInlineSig(\'' + id + '\')">🗑️ حذف</button></span></span>';
         var doc = getActiveDoc();
