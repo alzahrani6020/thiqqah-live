@@ -688,6 +688,71 @@
     }
     .toast.show { opacity: 1; }
 
+    /* === نافذة التوقيع المنبثقة === */
+    .sig-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 26, 46, 0.72);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      direction: rtl;
+      padding: 16px;
+      backdrop-filter: blur(2px);
+    }
+    .sig-modal-overlay.open { display: flex; }
+    .sig-modal {
+      background: var(--paper, #fffaf0);
+      border: 1.5px solid var(--gold-3, #d4a85c);
+      border-radius: 12px;
+      padding: 18px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+      text-align: center;
+    }
+    .sig-modal h3 {
+      margin: 0 0 12px;
+      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+      font-size: 15pt;
+      color: var(--green, #073f3a);
+    }
+    .sig-modal canvas {
+      width: 100%;
+      height: auto;
+      max-width: 400px;
+      border: 1.5px dashed var(--gold-3, #d4a85c);
+      border-radius: 8px;
+      background: #fff;
+      touch-action: none;
+    }
+    .sig-modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .sig-modal-actions button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: system-ui, sans-serif;
+    }
+    .sig-modal-actions .btn-secondary {
+      background: rgba(7,63,58,0.08);
+      color: var(--green, #073f3a);
+      border-color: rgba(7,63,58,0.15);
+    }
+    .sig-modal-actions .btn-primary {
+      background: linear-gradient(135deg, #0a665d, #0f7a68);
+      color: #fff;
+    }
+
     @media print {
       body { background: #fff; }
       .toolbar { display: none !important; }
