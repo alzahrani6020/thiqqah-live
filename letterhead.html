@@ -1788,20 +1788,32 @@ Kingdom of Saudi Arabia</p>
       window.addPdfSignatureOverlayTo = function(btn) {
         var wrap = btn.closest('.pdf-viewer-wrap');
         if (!wrap) return;
-        addPdfSignatureOverlay(wrap);
-      };
-      function addPdfSignatureOverlay(wrap) {
         var saved = localStorage.getItem('thiqqah-signature');
         if (!saved) {
           showToast('⚠️ ارسم توقيعك أولاً من زر ✍️ توقيع');
           return;
         }
+        showToast('🖱️ انقر على المكان الذي تريد وضع التوقيع فيه');
+        wrap.style.cursor = 'crosshair';
+        var clickHandler = function(e) {
+          var rect = wrap.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          var y = e.clientY - rect.top;
+          wrap.style.cursor = 'default';
+          wrap.removeEventListener('click', clickHandler);
+          addPdfSignatureOverlayAt(wrap, x, y);
+        };
+        wrap.addEventListener('click', clickHandler);
+      };
+      function addPdfSignatureOverlayAt(wrap, x, y) {
+        var saved = localStorage.getItem('thiqqah-signature');
+        if (!saved) return;
         var sigId = 'pdf-sig-' + Date.now() + '-' + wrap.dataset.page;
         var overlay = document.createElement('div');
         overlay.className = 'pdf-sig-overlay';
         overlay.id = sigId;
-        overlay.style.top = '50%';
-        overlay.style.left = '50%';
+        overlay.style.left = x + 'px';
+        overlay.style.top = y + 'px';
         overlay.style.transform = 'translate(-50%, -50%)';
         overlay.innerHTML = '<img src="' + saved + '" alt="توقيع"><div class="pdf-sig-actions"><button onclick="resizeSig(\'' + sigId + '\', -10)">−</button><button onclick="moveSig(\'' + sigId + '\', 0, -5)">↑</button><button onclick="moveSig(\'' + sigId + '\', -5, 0)">←</button><button onclick="removeInlineSig(\'' + sigId + '\')">🗑️</button><button onclick="moveSig(\'' + sigId + '\', 5, 0)">→</button><button onclick="moveSig(\'' + sigId + '\', 0, 5)">↓</button><button onclick="resizeSig(\'' + sigId + '\', 10)">+</button></div>';
         wrap.appendChild(overlay);
