@@ -845,6 +845,30 @@
       background: linear-gradient(135deg, #bd9144, #d4a85c);
       color: #fff;
     }
+    .sig-color-picker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green, #073f3a);
+      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+    }
+    .sig-color-picker .color-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      padding: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .sig-color-picker .color-dot.active {
+      border-color: var(--gold-3, #d4a85c);
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gold-3, #d4a85c);
+    }
 
     @media print {
       body { background: #fff; }
@@ -1024,6 +1048,13 @@ Kingdom of Saudi Arabia</p>
   <div class="sig-modal-overlay" id="sig-modal-overlay" onclick="if(event.target===this)closeSigModal()">
     <div class="sig-modal">
       <h3>✍️ ارسم توقيعك</h3>
+      <div class="sig-color-picker">
+        <span>لون القلم:</span>
+        <button class="color-dot active" style="background:#12243a;" onclick="setSigColor('#12243a',this)" title="أسود"></button>
+        <button class="color-dot" style="background:#1a5276;" onclick="setSigColor('#1a5276',this)" title="أزرق"></button>
+        <button class="color-dot" style="background:#c0392b;" onclick="setSigColor('#c0392b',this)" title="أحمر"></button>
+        <button class="color-dot" style="background:#073f3a;" onclick="setSigColor('#073f3a',this)" title="أخضر"></button>
+      </div>
       <canvas id="sig-modal-canvas" width="800" height="300"></canvas>
       <div class="sig-modal-actions">
         <button class="btn-secondary" onclick="clearSigModal()">🗑️ مسح</button>
@@ -1328,6 +1359,12 @@ Kingdom of Saudi Arabia</p>
 
       /* === توقيع modal === */
       var sigModalCtx = null;
+      var sigColor = '#12243a';
+      window.setSigColor = function(color, btn) {
+        sigColor = color;
+        document.querySelectorAll('.sig-color-picker .color-dot').forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+      };
       window.openSigModal = function() {
         var overlay = document.getElementById('sig-modal-overlay');
         overlay.classList.add('open');
@@ -1341,9 +1378,37 @@ Kingdom of Saudi Arabia</p>
             var cy = e.touches ? e.touches[0].clientY : e.clientY;
             return { x: cx - rect.left, y: cy - rect.top };
           };
-          var start = function(e) { drawing = true; var p = getPos(e); sigModalCtx.beginPath(); sigModalCtx.moveTo(p.x, p.y); e.preventDefault(); };
-          var draw = function(e) { if (!drawing) return; var p = getPos(e); sigModalCtx.lineTo(p.x, p.y); sigModalCtx.strokeStyle = '#12243a'; sigModalCtx.lineWidth = 2; sigModalCtx.stroke(); e.preventDefault(); };
-          var stop = function() { drawing = false; };
+          var lastPos = null, lastTime = null;
+          var start = function(e) { 
+            drawing = true; 
+            lastPos = getPos(e); 
+            lastTime = Date.now(); 
+            sigModalCtx.beginPath(); 
+            sigModalCtx.moveTo(lastPos.x, lastPos.y); 
+            e.preventDefault(); 
+          };
+          var draw = function(e) { 
+            if (!drawing) return; 
+            var p = getPos(e);
+            var now = Date.now();
+            var dist = Math.sqrt(Math.pow(p.x - lastPos.x, 2) + Math.pow(p.y - lastPos.y, 2));
+            var timeDiff = now - lastTime;
+            var speed = timeDiff > 0 ? dist / timeDiff : 0;
+            var width = Math.max(1.2, Math.min(4, 4 - speed * 0.4));
+            sigModalCtx.lineCap = 'round';
+            sigModalCtx.lineJoin = 'round';
+            sigModalCtx.strokeStyle = sigColor;
+            sigModalCtx.lineWidth = width;
+            sigModalCtx.shadowBlur = 1;
+            sigModalCtx.shadowColor = sigColor;
+            sigModalCtx.lineTo(p.x, p.y);
+            sigModalCtx.stroke();
+            sigModalCtx.shadowBlur = 0;
+            lastPos = p;
+            lastTime = now;
+            e.preventDefault(); 
+          };
+          var stop = function() { drawing = false; lastPos = null; lastTime = null; };
           canvas.addEventListener('mousedown', start);
           canvas.addEventListener('mousemove', draw);
           canvas.addEventListener('mouseup', stop);
