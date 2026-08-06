@@ -1076,7 +1076,8 @@ Kingdom of Saudi Arabia</p>
       <div class="sig-color-picker">
         <span>لون القلم:</span>
         <button class="color-dot active" style="background:#12243a;" onclick="setSigColor('#12243a',this)" title="أسود"></button>
-        <button class="color-dot" style="background:#1a5276;" onclick="setSigColor('#1a5276',this)" title="أزرق"></button>
+        <button class="color-dot" style="background:#1a5276;" onclick="setSigColor('#1a5276',this)" title="أزرق داكن"></button>
+        <button class="color-dot" style="background:#0066cc;" onclick="setSigColor('#0066cc',this)" title="أزرق"></button>
         <button class="color-dot" style="background:#c0392b;" onclick="setSigColor('#c0392b',this)" title="أحمر"></button>
         <button class="color-dot" style="background:#073f3a;" onclick="setSigColor('#073f3a',this)" title="أخضر"></button>
       </div>
@@ -1420,37 +1421,54 @@ Kingdom of Saudi Arabia</p>
             var cy = e.touches ? e.touches[0].clientY : e.clientY;
             return { x: cx - rect.left, y: cy - rect.top };
           };
-          var lastPos = null, lastTime = null;
-          var start = function(e) { 
-            drawing = true; 
-            lastPos = getPos(e); 
-            lastTime = Date.now(); 
-            sigModalCtx.beginPath(); 
-            sigModalCtx.moveTo(lastPos.x, lastPos.y); 
-            e.preventDefault(); 
-          };
-          var draw = function(e) { 
-            if (!drawing) return; 
-            var p = getPos(e);
-            var now = Date.now();
-            var dist = Math.sqrt(Math.pow(p.x - lastPos.x, 2) + Math.pow(p.y - lastPos.y, 2));
-            var timeDiff = now - lastTime;
-            var speed = timeDiff > 0 ? dist / timeDiff : 0;
-            var width = Math.max(1.2, Math.min(4, 4 - speed * 0.4));
+          var points = [];
+          var rafId = null;
+          var start = function(e) {
+            drawing = true;
+            points = [getPos(e)];
             sigModalCtx.lineCap = 'round';
             sigModalCtx.lineJoin = 'round';
             sigModalCtx.strokeStyle = sigColor;
-            sigModalCtx.lineWidth = width;
-            sigModalCtx.shadowBlur = 1;
-            sigModalCtx.shadowColor = sigColor;
-            sigModalCtx.lineTo(p.x, p.y);
-            sigModalCtx.stroke();
             sigModalCtx.shadowBlur = 0;
-            lastPos = p;
-            lastTime = now;
-            e.preventDefault(); 
+            e.preventDefault();
           };
-          var stop = function() { drawing = false; lastPos = null; lastTime = null; };
+          var draw = function(e) {
+            if (!drawing) return;
+            points.push(getPos(e));
+            if (!rafId) {
+              rafId = requestAnimationFrame(renderPoints);
+            }
+            e.preventDefault();
+          };
+          var renderPoints = function() {
+            rafId = null;
+            if (points.length < 2) return;
+            sigModalCtx.beginPath();
+            sigModalCtx.moveTo(points[0].x, points[0].y);
+            for (var i = 1; i < points.length - 1; i++) {
+              var midX = (points[i].x + points[i+1].x) / 2;
+              var midY = (points[i].y + points[i+1].y) / 2;
+              sigModalCtx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+            }
+            var last = points[points.length - 1];
+            sigModalCtx.lineTo(last.x, last.y);
+            var dist = 0;
+            for (var i = 1; i < points.length; i++) {
+              var dx = points[i].x - points[i-1].x;
+              var dy = points[i].y - points[i-1].y;
+              dist += Math.sqrt(dx*dx + dy*dy);
+            }
+            var speed = dist / Math.max(1, points.length);
+            sigModalCtx.lineWidth = Math.max(1.2, Math.min(4.5, 4.5 - speed * 0.08));
+            sigModalCtx.stroke();
+            points = [last];
+          };
+          var stop = function() {
+            drawing = false;
+            if (rafId) cancelAnimationFrame(rafId);
+            renderPoints();
+            points = [];
+          };
           canvas.addEventListener('mousedown', start);
           canvas.addEventListener('mousemove', draw);
           canvas.addEventListener('mouseup', stop);
