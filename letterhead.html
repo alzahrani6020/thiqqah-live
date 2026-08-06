@@ -1606,7 +1606,7 @@ Kingdom of Saudi Arabia</p>
           dataUrl = canvas.toDataURL('image/png');
         }
         var id = 'sig-' + Date.now();
-        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="duplicateInlineSig(\'' + id + '\')" title="تكرار">⧉ تكرار</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ للحافظة">📋 نسخ</button><span class="sig-color-btns"><button class="color-dot-sm" style="background:#12243a" onclick="recolorInlineSig(\'' + id + '\',\'#12243a\')" title="أسود"></button><button class="color-dot-sm" style="background:#0066cc" onclick="recolorInlineSig(\'' + id + '\',\'#0066cc\')" title="أزرق"></button><button class="color-dot-sm" style="background:#c0392b" onclick="recolorInlineSig(\'' + id + '\',\'#c0392b\')" title="أحمر"></button><button class="color-dot-sm" style="background:#073f3a" onclick="recolorInlineSig(\'' + id + '\',\'#073f3a\')" title="أخضر"></button></span><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
+        var html = '<span class="sig-inline" id="' + id + '" contenteditable="false" style="width:220px;"><img src="' + dataUrl + '" alt="توقيع"><span class="sig-actions"><button onclick="resizeSig(\'' + id + '\', -20)" title="تصغير">−</button><button onclick="moveSig(\'' + id + '\', 0, -5)" title="أعلى">↑</button><button onclick="moveSig(\'' + id + '\', -5, 0)" title="يسار">←</button><button onclick="duplicateInlineSig(\'' + id + '\')" title="تكرار">⧉</button><button onclick="copyInlineSig(\'' + id + '\')" title="نسخ للحافظة">📋</button><span class="sig-color-btns"><button class="color-dot-sm" style="background:#12243a" onclick="recolorInlineSig(\'' + id + '\',\'#12243a\')" title="أسود"></button><button class="color-dot-sm" style="background:#0066cc" onclick="recolorInlineSig(\'' + id + '\',\'#0066cc\')" title="أزرق"></button><button class="color-dot-sm" style="background:#c0392b" onclick="recolorInlineSig(\'' + id + '\',\'#c0392b\')" title="أحمر"></button><button class="color-dot-sm" style="background:#073f3a" onclick="recolorInlineSig(\'' + id + '\',\'#073f3a\')" title="أخضر"></button></span><button class="danger" onclick="removeInlineSig(\'' + id + '\')">🗑️</button><button onclick="moveSig(\'' + id + '\', 5, 0)" title="يمين">→</button><button onclick="moveSig(\'' + id + '\', 0, 5)" title="أسفل">↓</button><button onclick="resizeSig(\'' + id + '\', 20)" title="تكبير">+</button></span></span>';
         var doc = getActiveDoc();
         if (doc && doc.contains(window.getSelection().anchorNode)) {
           insertAtCursor(html + '<br>');
@@ -1636,6 +1636,21 @@ Kingdom of Saudi Arabia</p>
         var current = parseInt(el.style.width || el.offsetWidth, 10);
         var next = Math.max(60, current + delta);
         el.style.width = next + 'px';
+      };
+      window.moveSig = function(id, dx, dy) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var parent = el.parentElement;
+        if (!parent) return;
+        var currentLeft = parseFloat(el.style.left || el.offsetLeft) || 0;
+        var currentTop = parseFloat(el.style.top || el.offsetTop) || 0;
+        if (el.style.position !== 'absolute' && el.style.position !== 'relative') {
+          el.style.position = 'relative';
+          el.style.left = '0px';
+          el.style.top = '0px';
+        }
+        el.style.left = (currentLeft + dx) + 'px';
+        el.style.top = (currentTop + dy) + 'px';
       };
       window.recolorInlineSig = function(id, color) {
         var el = document.getElementById(id);
@@ -1741,7 +1756,7 @@ Kingdom of Saudi Arabia</p>
               addPdfSignatureOverlay(wrap);
             });
             document.getElementById('pdf-save-bar').classList.add('show');
-            showToast('✅ تم رفع ' + pages.length + ' صفحة — اسحب التوقيع إلى المكان المطلوب');
+            showToast('✅ تم رفع ' + pages.length + ' صفحة. مرّر للأسفل لرؤية بقية الصفحات');
           }
         }).catch(function(err) {
           showToast('❌ فشل قراءة PDF');
