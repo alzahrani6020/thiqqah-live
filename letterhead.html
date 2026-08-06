@@ -1693,41 +1693,55 @@ Kingdom of Saudi Arabia</p>
 
       /* === رفع PDF وتوقيعه === */
       var currentPdfDataUrl = null;
+      var pdfPageDataUrls = [];
+      var pdfPageDimensions = [];
       window.handlePdfUpload = function(input) {
         var file = input.files[0];
         if (!file) return;
         var reader = new FileReader();
         reader.onload = function(e) {
           var typedArray = new Uint8Array(e.target.result);
-          renderPdfPage(typedArray);
+          renderPdfAllPages(typedArray);
         };
         reader.readAsArrayBuffer(file);
       };
-      function renderPdfPage(typedArray) {
+      function renderPdfAllPages(typedArray) {
+        pdfPageDataUrls = [];
+        pdfPageDimensions = [];
         pdfjsLib.getDocument({ data: typedArray }).promise.then(function(pdf) {
-          return pdf.getPage(1);
-        }).then(function(page) {
-          var scale = 2;
-          var viewport = page.getViewport({ scale: scale });
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          var renderTask = page.render({ canvasContext: ctx, viewport: viewport });
-          return renderTask.promise.then(function() { return canvas.toDataURL('image/png'); });
-        }).then(function(dataUrl) {
-          currentPdfDataUrl = dataUrl;
+          var total = pdf.numPages;
+          var promises = [];
+          for (var i = 1; i <= total; i++) {
+            promises.push(pdf.getPage(i).then(function(page) {
+              var scale = 2;
+              var viewport = page.getViewport({ scale: scale });
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
+                return { url: canvas.toDataURL('image/png'), width: viewport.width, height: viewport.height, pageNum: page.pageNumber };
+              });
+            }));
+          }
+          return Promise.all(promises);
+        }).then(function(pages) {
+          pages.sort(function(a, b) { return a.pageNum - b.pageNum; });
+          pdfPageDataUrls = pages.map(function(p) { return p.url; });
+          pdfPageDimensions = pages.map(function(p) { return { width: p.width, height: p.height }; });
           var doc = getActiveDoc();
           if (doc) {
             doc.innerHTML = '';
-            var wrap = document.createElement('div');
-            wrap.className = 'pdf-viewer-wrap';
-            wrap.id = 'pdf-viewer-wrap';
-            wrap.innerHTML = '<img id="pdf-page-img" src="' + dataUrl + '" alt="PDF page">';
-            doc.appendChild(wrap);
-            addPdfSignatureOverlay(wrap);
+            pages.forEach(function(p) {
+              var wrap = document.createElement('div');
+              wrap.className = 'pdf-viewer-wrap';
+              wrap.dataset.page = p.pageNum;
+              wrap.innerHTML = '<img src="' + p.url + '" alt="PDF page ' + p.pageNum + '">';
+              doc.appendChild(wrap);
+              addPdfSignatureOverlay(wrap);
+            });
             document.getElementById('pdf-save-bar').classList.add('show');
-            showToast('✅ تم رفع PDF — اسحب التوقيع إلى المكان المطلوب');
+            showToast('✅ تم رفع ' + pages.length + ' صفحة — اسحب التوقيع إلى المكان المطلوب');
           }
         }).catch(function(err) {
           showToast('❌ فشل قراءة PDF');
@@ -1740,7 +1754,7 @@ Kingdom of Saudi Arabia</p>
           showToast('⚠️ ارسم توقيعك أولاً من زر ✍️ توقيع');
           return;
         }
-        var sigId = 'pdf-sig-' + Date.now();
+        var sigId = 'pdf-sig-' + Date.now() + '-' + wrap.dataset.page;
         var overlay = document.createElement('div');
         overlay.className = 'pdf-sig-overlay';
         overlay.id = sigId;
@@ -1782,36 +1796,43 @@ Kingdom of Saudi Arabia</p>
         document.addEventListener('touchend', function() { isDragging = false; });
       }
       window.saveSignedPdf = function() {
-        var wrap = document.getElementById('pdf-viewer-wrap');
-        if (!wrap) return;
-        var img = wrap.querySelector('img');
-        var sig = wrap.querySelector('.pdf-sig-overlay');
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        if (sig) {
-          var sigImg = sig.querySelector('img');
-          var ratioX = canvas.width / wrap.clientWidth;
-          var ratioY = canvas.height / wrap.clientHeight;
-          var sx = sig.offsetLeft * ratioX;
-          var sy = sig.offsetTop * ratioY;
-          var sw = sig.clientWidth * ratioX;
-          var sh = sig.clientHeight * ratioY;
-          ctx.drawImage(sigImg, sx, sy, sw, sh);
-        }
-        var outImg = canvas.toDataURL('image/jpeg', 0.95);
-        var pdf = new jspdf.jsPDF({ orientation: canvas.width > canvas.height ? 'l' : 'p', unit: 'px', format: [canvas.width, canvas.height] });
-        pdf.addImage(outImg, 'JPEG', 0, 0, canvas.width, canvas.height);
+        var wraps = document.querySelectorAll('.pdf-viewer-wrap');
+        if (!wraps.length) return;
+        var firstDim = pdfPageDimensions[0];
+        var pdf = new jspdf.jsPDF({ orientation: firstDim.width > firstDim.height ? 'l' : 'p', unit: 'px', format: [firstDim.width, firstDim.height] });
+        var count = 0;
+        wraps.forEach(function(wrap, index) {
+          var img = wrap.querySelector('img');
+          var sigs = wrap.querySelectorAll('.pdf-sig-overlay');
+          var dim = pdfPageDimensions[index] || firstDim;
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          canvas.width = dim.width;
+          canvas.height = dim.height;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          sigs.forEach(function(sig) {
+            var sigImg = sig.querySelector('img');
+            var ratioX = canvas.width / wrap.clientWidth;
+            var ratioY = canvas.height / wrap.clientHeight;
+            var sx = sig.offsetLeft * ratioX;
+            var sy = sig.offsetTop * ratioY;
+            var sw = sig.clientWidth * ratioX;
+            var sh = sig.clientHeight * ratioY;
+            ctx.drawImage(sigImg, sx, sy, sw, sh);
+          });
+          var outImg = canvas.toDataURL('image/jpeg', 0.95);
+          if (count > 0) pdf.addPage([dim.width, dim.height], dim.width > dim.height ? 'l' : 'p');
+          pdf.addImage(outImg, 'JPEG', 0, 0, dim.width, dim.height);
+          count++;
+        });
         pdf.save('signed-document.pdf');
         showToast('✅ تم حفظ PDF الموقّع');
       };
       window.closePdfViewer = function() {
-        var wrap = document.getElementById('pdf-viewer-wrap');
-        if (wrap) wrap.remove();
+        document.querySelectorAll('.pdf-viewer-wrap').forEach(function(w) { w.remove(); });
         document.getElementById('pdf-save-bar').classList.remove('show');
-        currentPdfDataUrl = null;
+        pdfPageDataUrls = [];
+        pdfPageDimensions = [];
       };
 
       /* === ختم مُدرج ديناميكياً === */
