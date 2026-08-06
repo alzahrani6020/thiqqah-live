@@ -968,17 +968,46 @@
       background: rgba(7, 63, 58, 0.05);
       border-bottom: 1px dashed var(--gold-3, #d4a85c);
     }
+    .pdf-page-tools {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(7, 63, 58, 0.05);
+    }
     .btn-add-sig-to-page {
-      display: block;
-      width: 100%;
+      flex: 1;
       padding: 6px;
       background: linear-gradient(135deg, #0a665d, #0f7a68);
       color: #fff;
       border: none;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+      border-radius: 4px;
+    }
+    .pdf-date-overlay, .pdf-stamp-overlay {
+      position: absolute;
+      cursor: move;
+      z-index: 10;
+      touch-action: none;
+      border: 1px dashed transparent;
+    }
+    .pdf-date-overlay:hover, .pdf-stamp-overlay:hover { border-color: var(--gold-3, #d4a85c); }
+    .pdf-date-overlay span {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(255,255,255,0.9);
+      color: var(--green, #073f3a);
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 4px;
+      font-family: "Noto Naskh Arabic", system-ui, sans-serif;
+    }
+    .pdf-stamp-overlay svg {
+      width: 100px;
+      height: 100px;
+      display: block;
     }
     .pdf-save-bar {
       display: none;
@@ -1785,7 +1814,7 @@ Kingdom of Saudi Arabia</p>
             var wrap = document.createElement('div');
             wrap.className = 'pdf-viewer-wrap';
             wrap.dataset.page = p.pageNum;
-            wrap.innerHTML = '<div class="pdf-page-label">صفحة ' + p.pageNum + ' من ' + pages.length + '</div><img src="' + p.url + '" alt="PDF page ' + p.pageNum + '"><button class="btn-add-sig-to-page" onclick="addPdfSignatureOverlayTo(this)">✍️ أضف توقيع لهذه الصفحة</button>';
+            wrap.innerHTML = '<div class="pdf-page-label">صفحة ' + p.pageNum + ' من ' + pages.length + '</div><img src="' + p.url + '" alt="PDF page ' + p.pageNum + '"><div class="pdf-page-tools"><button class="btn-add-sig-to-page" onclick="addPdfSignatureOverlayTo(this)">✍️ توقيع</button><button class="btn-add-sig-to-page" onclick="addPdfDateTo(this)">📅 تاريخ</button><button class="btn-add-sig-to-page" onclick="addPdfStampTo(this)">🔴 ختم</button></div>';
             doc.appendChild(wrap);
           });
           document.getElementById('pdf-save-bar').classList.add('show');
@@ -1801,6 +1830,21 @@ Kingdom of Saudi Arabia</p>
           return;
         }
         showToast('🖱️ انقر على المكان الذي تريد وضع التوقيع فيه');
+        handlePdfClick(wrap, addPdfSignatureOverlayAt);
+      };
+      window.addPdfDateTo = function(btn) {
+        var wrap = btn.closest('.pdf-viewer-wrap');
+        if (!wrap) return;
+        showToast('🖱️ انقر على المكان الذي تريد وضع التاريخ فيه');
+        handlePdfClick(wrap, addPdfDateOverlayAt);
+      };
+      window.addPdfStampTo = function(btn) {
+        var wrap = btn.closest('.pdf-viewer-wrap');
+        if (!wrap) return;
+        showToast('🖱️ انقر على المكان الذي تريد وضع الختم فيه');
+        handlePdfClick(wrap, addPdfStampOverlayAt);
+      };
+      function handlePdfClick(wrap, callback) {
         wrap.style.cursor = 'crosshair';
         var clickHandler = function(e) {
           var rect = wrap.getBoundingClientRect();
@@ -1808,10 +1852,10 @@ Kingdom of Saudi Arabia</p>
           var y = e.clientY - rect.top;
           wrap.style.cursor = 'default';
           wrap.removeEventListener('click', clickHandler);
-          addPdfSignatureOverlayAt(wrap, x, y);
+          callback(wrap, x, y);
         };
         wrap.addEventListener('click', clickHandler);
-      };
+      }
       function addPdfSignatureOverlayAt(wrap, x, y) {
         var saved = localStorage.getItem('thiqqah-signature');
         if (!saved) return;
@@ -1823,6 +1867,44 @@ Kingdom of Saudi Arabia</p>
         overlay.style.top = y + 'px';
         overlay.style.transform = 'translate(-50%, -50%)';
         overlay.innerHTML = '<img src="' + saved + '" alt="توقيع"><div class="pdf-sig-actions"><button onclick="resizeSig(\'' + sigId + '\', -10)">−</button><button onclick="moveSig(\'' + sigId + '\', 0, -5)">↑</button><button onclick="moveSig(\'' + sigId + '\', -5, 0)">←</button><button class="color-dot-sm" style="background:#12243a" onclick="recolorInlineSig(\'' + sigId + '\',\'#12243a\')" title="أسود"></button><button class="color-dot-sm" style="background:#0066cc" onclick="recolorInlineSig(\'' + sigId + '\',\'#0066cc\')" title="أزرق"></button><button class="color-dot-sm" style="background:#c0392b" onclick="recolorInlineSig(\'' + sigId + '\',\'#c0392b\')" title="أحمر"></button><button class="color-dot-sm" style="background:#073f3a" onclick="recolorInlineSig(\'' + sigId + '\',\'#073f3a\')" title="أخضر"></button><button onclick="removeInlineSig(\'' + sigId + '\')">🗑️</button><button onclick="moveSig(\'' + sigId + '\', 5, 0)">→</button><button onclick="moveSig(\'' + sigId + '\', 0, 5)">↓</button><button onclick="resizeSig(\'' + sigId + '\', 10)">+</button></div>';
+        wrap.appendChild(overlay);
+        makeDraggable(overlay, wrap);
+      }
+      function addPdfDateOverlayAt(wrap, x, y) {
+        var dateId = 'pdf-date-' + Date.now() + '-' + wrap.dataset.page;
+        var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
+        var overlay = document.createElement('div');
+        overlay.className = 'pdf-date-overlay';
+        overlay.id = dateId;
+        overlay.style.left = x + 'px';
+        overlay.style.top = y + 'px';
+        overlay.style.transform = 'translate(-50%, -50%)';
+        overlay.innerHTML = '<span>' + dateStr + '</span><div class="pdf-sig-actions"><button onclick="moveSig(\'' + dateId + '\', 0, -5)">↑</button><button onclick="moveSig(\'' + dateId + '\', -5, 0)">←</button><button onclick="removeInlineSig(\'' + dateId + '\')">🗑️</button><button onclick="moveSig(\'' + dateId + '\', 5, 0)">→</button><button onclick="moveSig(\'' + dateId + '\', 0, 5)">↓</button></div>';
+        wrap.appendChild(overlay);
+        makeDraggable(overlay, wrap);
+      }
+      function addPdfStampOverlayAt(wrap, x, y) {
+        var stampId = 'pdf-stamp-' + Date.now() + '-' + wrap.dataset.page;
+        var dateStr = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
+        var color = '#c0392b';
+        var svg = '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
+          '<circle cx="100" cy="100" r="96" fill="none" stroke="' + color + '" stroke-width="3"/>' +
+          '<circle cx="100" cy="100" r="88" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-dasharray="4,3"/>' +
+          '<path id="topArc' + stampId + '" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>' +
+          '<text fill="' + color + '" font-size="13" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif"><textPath href="#topArc' + stampId + '" startOffset="50%" text-anchor="middle">مكتب ثقة الذهبية للخدمات العامة</textPath></text>' +
+          '<path id="botArc' + stampId + '" d="M 40,105 A 60,60 0 0,0 160,105" fill="none"/>' +
+          '<text fill="' + color + '" font-size="11" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif"><textPath href="#botArc' + stampId + '" startOffset="50%" text-anchor="middle">تأسيس الشركات في السعودية</textPath></text>' +
+          '<line x1="45" y1="100" x2="155" y2="100" stroke="' + color + '" stroke-width="1"/>' +
+          '<text x="100" y="92" text-anchor="middle" fill="' + color + '" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">موثق رقمياً</text>' +
+          '<text x="100" y="118" text-anchor="middle" fill="' + color + '" font-size="10" font-weight="700" font-family="Noto Naskh Arabic, Tahoma, serif">' + dateStr + '</text>' +
+          '</svg>';
+        var overlay = document.createElement('div');
+        overlay.className = 'pdf-stamp-overlay';
+        overlay.id = stampId;
+        overlay.style.left = x + 'px';
+        overlay.style.top = y + 'px';
+        overlay.style.transform = 'translate(-50%, -50%)';
+        overlay.innerHTML = svg + '<div class="pdf-sig-actions"><button onclick="resizeSig(\'' + stampId + '\', -10)">−</button><button onclick="moveSig(\'' + stampId + '\', 0, -5)">↑</button><button onclick="moveSig(\'' + stampId + '\', -5, 0)">←</button><button onclick="removeInlineSig(\'' + stampId + '\')">🗑️</button><button onclick="moveSig(\'' + stampId + '\', 5, 0)">→</button><button onclick="moveSig(\'' + stampId + '\', 0, 5)">↓</button><button onclick="resizeSig(\'' + stampId + '\', 10)">+</button></div>';
         wrap.appendChild(overlay);
         makeDraggable(overlay, wrap);
       }
@@ -1863,36 +1945,78 @@ Kingdom of Saudi Arabia</p>
         var firstDim = pdfPageDimensions[0];
         var pdf = new jspdf.jsPDF({ orientation: firstDim.width > firstDim.height ? 'l' : 'p', unit: 'px', format: [firstDim.width, firstDim.height] });
         var count = 0;
-        wraps.forEach(function(wrap, index) {
+        function processNext() {
+          if (count >= wraps.length) {
+            pdf.save('signed-document.pdf');
+            showToast('✅ تم حفظ PDF الموقّع');
+            return;
+          }
+          var wrap = wraps[count];
           var img = wrap.querySelector('img');
-          var sigs = wrap.querySelectorAll('.pdf-sig-overlay');
-          var dim = pdfPageDimensions[index] || firstDim;
+          var dim = pdfPageDimensions[count] || firstDim;
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
           canvas.width = dim.width;
           canvas.height = dim.height;
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          sigs.forEach(function(sig) {
-            var sigImg = sig.querySelector('img');
+          function getCanvasPos(el) {
             var imgRect = img.getBoundingClientRect();
             var wrapRect = wrap.getBoundingClientRect();
             var offsetX = imgRect.left - wrapRect.left;
             var offsetY = imgRect.top - wrapRect.top;
             var ratioX = canvas.width / imgRect.width;
             var ratioY = canvas.height / imgRect.height;
-            var centerX = (sig.offsetLeft + sig.clientWidth / 2 - offsetX) * ratioX;
-            var centerY = (sig.offsetTop + sig.clientHeight / 2 - offsetY) * ratioY;
-            var sw = sig.clientWidth * ratioX;
-            var sh = sig.clientHeight * ratioY;
-            ctx.drawImage(sigImg, centerX - sw / 2, centerY - sh / 2, sw, sh);
+            var centerX = (el.offsetLeft + el.clientWidth / 2 - offsetX) * ratioX;
+            var centerY = (el.offsetTop + el.clientHeight / 2 - offsetY) * ratioY;
+            return { x: centerX, y: centerY, ratioX: ratioX, ratioY: ratioY };
+          }
+          wrap.querySelectorAll('.pdf-sig-overlay').forEach(function(sig) {
+            var sigImg = sig.querySelector('img');
+            var pos = getCanvasPos(sig);
+            var sw = sig.clientWidth * pos.ratioX;
+            var sh = sig.clientHeight * pos.ratioY;
+            ctx.drawImage(sigImg, pos.x - sw / 2, pos.y - sh / 2, sw, sh);
           });
-          var outImg = canvas.toDataURL('image/jpeg', 0.95);
-          if (count > 0) pdf.addPage([dim.width, dim.height], dim.width > dim.height ? 'l' : 'p');
-          pdf.addImage(outImg, 'JPEG', 0, 0, dim.width, dim.height);
-          count++;
-        });
-        pdf.save('signed-document.pdf');
-        showToast('✅ تم حفظ PDF الموقّع');
+          wrap.querySelectorAll('.pdf-date-overlay').forEach(function(dateEl) {
+            var pos = getCanvasPos(dateEl);
+            var span = dateEl.querySelector('span');
+            var fontSize = parseInt(window.getComputedStyle(span).fontSize, 10) * pos.ratioY;
+            ctx.font = '700 ' + fontSize + 'px "Noto Naskh Arabic", Tahoma, serif';
+            ctx.fillStyle = '#073f3a';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(span.textContent, pos.x, pos.y);
+          });
+          var stampPromises = [];
+          wrap.querySelectorAll('.pdf-stamp-overlay').forEach(function(stampEl) {
+            var pos = getCanvasPos(stampEl);
+            var svg = stampEl.querySelector('svg');
+            var svgData = new XMLSerializer().serializeToString(svg);
+            var promise = new Promise(function(resolve) {
+              var sCanvas = document.createElement('canvas');
+              sCanvas.width = 400; sCanvas.height = 400;
+              var sCtx = sCanvas.getContext('2d');
+              var sImg = new Image();
+              sImg.onload = function() {
+                sCtx.drawImage(sImg, 0, 0, 400, 400);
+                var sw = stampEl.clientWidth * pos.ratioX;
+                var sh = stampEl.clientHeight * pos.ratioY;
+                ctx.drawImage(sCanvas, pos.x - sw / 2, pos.y - sh / 2, sw, sh);
+                resolve();
+              };
+              sImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            });
+            stampPromises.push(promise);
+          });
+          Promise.all(stampPromises).then(function() {
+            var outImg = canvas.toDataURL('image/jpeg', 0.95);
+            if (count > 0) pdf.addPage([dim.width, dim.height], dim.width > dim.height ? 'l' : 'p');
+            pdf.addImage(outImg, 'JPEG', 0, 0, dim.width, dim.height);
+            count++;
+            processNext();
+          });
+        }
+        processNext();
       };
       window.closePdfViewer = function() {
         document.querySelectorAll('.pdf-viewer-wrap').forEach(function(w) { w.remove(); });
