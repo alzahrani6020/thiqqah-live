@@ -1363,12 +1363,8 @@ Kingdom of Saudi Arabia</p>
         if (doc) {
           doc.addEventListener('input', function() { pushUndo(); });
         }
-        // Anonymous auth + fill saved staff info
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-          firebase.auth().signInAnonymously().catch(function(err) {
-            console.log('Auth:', err.code);
-          });
-        }
+        // Auth guard in letterhead-auth.js handles sign-in
+        // Fill saved staff info
         var savedName = localStorage.getItem('thiqqah-staff-name');
         var savedEmail = localStorage.getItem('thiqqah-staff-email');
         if (savedName) document.getElementById('send-name').value = savedName;
@@ -1383,6 +1379,7 @@ Kingdom of Saudi Arabia</p>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="lib/firebase-config.js"></script>
+  <script src="lib/letterhead-auth.js"></script>
 
   <!-- Send Modal -->
   <div class="sig-modal-overlay" id="send-modal-overlay" onclick="if(event.target===this)closeSendModal()">
@@ -1444,12 +1441,14 @@ Kingdom of Saudi Arabia</p>
       localStorage.setItem('thiqqah-staff-name', name);
       localStorage.setItem('thiqqah-staff-email', email);
       showToast('⏳ جاري الإرسال...');
+      var currentUser = firebase.auth().currentUser;
       db.collection('documents').add({
         html: docHtml,
         subject: subject,
         ref: ref,
         senderName: name,
         senderEmail: email,
+        senderUid: currentUser ? currentUser.uid : null,
         note: note,
         status: 'pending',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1473,7 +1472,7 @@ Kingdom of Saudi Arabia</p>
       if (typeof firebase === 'undefined' || !db) { list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:12px;">❌ Firebase غير متصل</div>'; return; }
       list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">⏳ جاري التحميل...</div>';
       if (window._myInboxUnsub) window._myInboxUnsub();
-      window._myInboxUnsub = db.collection('documents').where('status', '==', 'stamped').limit(50).onSnapshot(function(snap) {
+      window._myInboxUnsub = db.collection('documents').where('status', '==', 'returned').limit(50).onSnapshot(function(snap) {
         if (snap.empty) { list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted);">📭 لا توجد مستندات موثقة</div>'; return; }
         var html = '';
         snap.forEach(function(doc) {

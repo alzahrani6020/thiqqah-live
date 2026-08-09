@@ -20,15 +20,30 @@ service cloud.firestore {
       return isAuth() && getRole() == 'staff';
     }
 
+    function ownsDoc(resource) {
+      return isAuth() && resource.data.senderUid == request.auth.uid;
+    }
+
     // Documents collection
     match /documents/{docId} {
-      // Anyone authenticated can create (staff sends)
-      allow create: if isAuth();
+      // Staff/Admin: authenticated users can create documents they own
+      allow create: if isAuth()
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.status == 'pending';
 
-      // Staff: read-only (can read their own + all)
-      // Admin: full control
-      allow read: if isAuth();
-      allow update: if isAdmin();
+      // Admin: full read access
+      // Staff: read returned docs and their own docs
+      // Users: read their own docs
+      allow read: if isAdmin()
+        || (isStaff() && resource.data.status == 'returned')
+        || ownsDoc(resource);
+
+      // Admin: full update (e.g. stamp & return)
+      // Sender: can update their own pending doc only
+      allow update: if isAdmin()
+        || (ownsDoc(resource) && resource.data.status == 'pending' && request.resource.data.status == 'pending');
+
+      // Admin only
       allow delete: if isAdmin();
     }
 

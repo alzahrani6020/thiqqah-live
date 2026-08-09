@@ -1,15 +1,26 @@
 {
-  "name": "ثقة الذهبية",
+  "name": "ثقة الذهبية للخدمات العامة وتأسيس الأعمال",
   "short_name": "ثقة الذهبية",
+  "description": "مكتب خدمات عامة في السعودية لتأسيس الشركات، التراخيص البلدية، متابعة الجهات الحكومية، وإدارة الأملاك والمشاريع.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fdfbf7",
   "theme_color": "#0f5f3e",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
   "icons": [
     {
-      "src": "/assets/thiqqah-logo.png",
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
