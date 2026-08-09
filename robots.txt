@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /letterhead.html
+Disallow: /letterhead-new.html
+Disallow: /letterhead-staff.html
+Disallow: /archive/
 Sitemap: https://thiqqah.live/sitemap.xml
