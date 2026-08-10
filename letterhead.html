@@ -1876,9 +1876,10 @@ Kingdom of Saudi Arabia</p>
         pendingWordHtml = null;
       };
       window.confirmWordMode = function(mode) {
+        var html = pendingWordHtml;
         closeWordModeModal();
-        if (!pendingWordHtml) return;
-        applyWordContent(pendingWordHtml, mode);
+        if (!html) return;
+        applyWordContent(html, mode);
       };
 
       function applyWordContent(html, mode) {
