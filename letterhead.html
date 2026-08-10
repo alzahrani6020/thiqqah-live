@@ -192,6 +192,36 @@
       z-index: 10;
     }
 
+    /* === وضع رفع Word كما هو (بدون ترويسة) === */
+    .sheet.plain-sheet {
+      background: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .sheet.plain-sheet::before { display: none; }
+    .sheet.plain-sheet .corner-ornament,
+    .sheet.plain-sheet .top-rule,
+    .sheet.plain-sheet .brand-ribbon,
+    .sheet.plain-sheet .meta-fields,
+    .sheet.plain-sheet .footer-zone,
+    .sheet.plain-sheet .page-number,
+    .sheet.plain-sheet .sheet-inner-watermark {
+      display: none !important;
+    }
+    .sheet.plain-sheet .sheet-inner {
+      padding: 20mm 18mm;
+    }
+    .sheet.plain-sheet .writing-surface {
+      border: none;
+      background: transparent;
+      min-height: 257mm;
+    }
+    .sheet.plain-sheet .doc-content {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 12pt;
+      line-height: 1.7;
+    }
+
     .sheet-inner {
       position: relative;
       flex: 1 1 auto;
@@ -1042,6 +1072,12 @@
       .sheet:last-child { page-break-after: auto; break-after: auto; }
       .sheet-inner { padding: 14mm 16mm 18mm; }
       .doc-content { min-height: auto; padding: 2mm 0; }
+      .sheet.plain-sheet {
+        background: #fff;
+        border: none;
+        box-shadow: none;
+      }
+      .sheet.plain-sheet .sheet-inner { padding: 18mm 16mm; }
       .signature-canvas { background: transparent; }
       .stamp { opacity: 0.85; }
     }
@@ -1204,6 +1240,27 @@ Kingdom of Saudi Arabia</p>
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- نافذة اختيار وضع رفع Word -->
+  <div class="sig-modal-overlay" id="word-mode-overlay" onclick="if(event.target===this)closeWordModeModal()">
+    <div class="sig-modal" style="max-width:460px;">
+      <h3>📝 خيارات رفع ملف Word</h3>
+      <p style="margin:8px 0 16px;color:#555;font-size:13px;">اختر طريقة عرض المستند مع مراعاة صفحاته:</p>
+      <div style="display:flex;flex-direction:column;gap:10px;text-align:right;">
+        <button onclick="confirmWordMode('letterhead')" style="display:block;width:100%;padding:12px 14px;border:1.5px solid var(--gold-3);border-radius:10px;background:linear-gradient(135deg,#fffaf0,#f7f0e0);cursor:pointer;text-align:right;">
+          <strong style="display:block;color:var(--green);font-size:14px;margin-bottom:4px;">📜 على ترويسة ثقة</strong>
+          <span style="font-size:12px;color:#555;font-weight:normal;">احتفظ بترويسة مكتب ثقة الذهبية وتذييلها على كل صفحة</span>
+        </button>
+        <button onclick="confirmWordMode('plain')" style="display:block;width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;text-align:right;">
+          <strong style="display:block;color:#1a5276;font-size:14px;margin-bottom:4px;">📄 كما هو في Word</strong>
+          <span style="font-size:12px;color:#555;font-weight:normal;">استورد الملف بدون ترويسة ثقة (خلفية بيضاء نظيفة)</span>
+        </button>
+      </div>
+      <div class="sig-modal-actions" style="margin-top:18px;">
+        <button onclick="closeWordModeModal()" class="btn-secondary" style="background:#f0f0f0;color:#333;">إلغاء</button>
+      </div>
+    </div>
+  </div>
 
   <div class="sig-modal-overlay" id="sig-modal-overlay" onclick="if(event.target===this)closeSigModal()">
     <div class="sig-modal">
@@ -1774,7 +1831,9 @@ Kingdom of Saudi Arabia</p>
         reader.readAsArrayBuffer(file);
       };
 
-      /* === رفع Word وتحريره === */
+      /* === رفع Word وتحريره مع خيار الترويسة === */
+      var pendingWordHtml = null;
+
       window.handleWordUpload = function(input) {
         var file = input.files[0];
         if (!file) return;
@@ -1790,22 +1849,13 @@ Kingdom of Saudi Arabia</p>
             styleMap: [
               "p[style-name='Heading 1'] => h1",
               "p[style-name='Heading 2'] => h2",
-              "p[style-name='Heading 3'] => h3"
+              "p[style-name='Heading 3'] => h3",
+              "br[type='page'] => div.page-break"
             ]
           }).then(function(result) {
-            var html = result.value;
-            var messages = result.messages;
-            var doc = getActiveDoc();
-            if (doc) {
-              doc.innerHTML = '<div class="word-content" style="text-align:right;direction:rtl;line-height:1.8;">' + html + '</div>';
-              doc.contentEditable = 'true';
-              var btnWrite = document.getElementById('btn-write');
-              if (btnWrite) btnWrite.classList.add('active');
-              showToast('✅ تم تحميل ملف Word. يمكنك التعديل الآن');
-            }
-            if (messages.length) {
-              console.log('Mammoth messages:', messages);
-            }
+            pendingWordHtml = result.value;
+            if (result.messages.length) console.log('Mammoth messages:', result.messages);
+            openWordModeModal();
           }).catch(function(err) {
             showToast('❌ فشل قراءة ملف Word');
             console.error(err);
@@ -1815,7 +1865,80 @@ Kingdom of Saudi Arabia</p>
           showToast('❌ فشل قراءة الملف');
         };
         reader.readAsArrayBuffer(file);
+        input.value = '';
       };
+
+      window.openWordModeModal = function() {
+        document.getElementById('word-mode-overlay').classList.add('open');
+      };
+      window.closeWordModeModal = function() {
+        document.getElementById('word-mode-overlay').classList.remove('open');
+        pendingWordHtml = null;
+      };
+      window.confirmWordMode = function(mode) {
+        closeWordModeModal();
+        if (!pendingWordHtml) return;
+        applyWordContent(pendingWordHtml, mode);
+      };
+
+      function applyWordContent(html, mode) {
+        var container = document.getElementById('pages-container');
+        var template = container.querySelector('.sheet');
+        if (!template) {
+          showToast('❌ لا يوجد قالب ورقة');
+          return;
+        }
+        template = template.cloneNode(true);
+        template.querySelectorAll('.doc-content').forEach(function(d) { d.innerHTML = ''; });
+
+        var pages = html.split(/<div[^>]*class=["'][^"']*page-break[^"']*["'][^>]*><\/div>/i);
+        if (pages.length === 1 && !pages[0].trim()) pages = [html];
+
+        container.innerHTML = '';
+        pageCounter = 0;
+
+        pages.forEach(function(pageHtml) {
+          if (!pageHtml.trim()) return;
+          pageCounter++;
+          var sheet = template.cloneNode(true);
+          sheet.setAttribute('data-page', pageCounter);
+          sheet.classList.remove('plain-sheet', 'letterhead-sheet');
+          sheet.classList.add(mode === 'plain' ? 'plain-sheet' : 'letterhead-sheet');
+
+          var pageNum = sheet.querySelector('.page-number');
+          if (pageNum) pageNum.textContent = pageCounter + ' / ' + pageCounter;
+
+          var content = sheet.querySelector('.doc-content');
+          content.id = 'doc-' + pageCounter;
+          content.innerHTML = '';
+          content.contentEditable = 'true';
+
+          if (mode === 'plain') {
+            content.setAttribute('dir', 'ltr');
+            content.style.textAlign = 'left';
+            content.style.direction = 'ltr';
+          } else {
+            content.setAttribute('dir', 'rtl');
+            content.style.textAlign = 'right';
+            content.style.direction = 'rtl';
+          }
+
+          content.innerHTML = '<div class="word-content" style="line-height:1.7;">' + pageHtml + '</div>';
+          container.appendChild(sheet);
+        });
+
+        var total = container.querySelectorAll('.sheet').length;
+        container.querySelectorAll('.sheet').forEach(function(s, i) {
+          var pn = s.querySelector('.page-number');
+          if (pn) pn.textContent = (i + 1) + ' / ' + total;
+        });
+
+        writingMode = true;
+        var btnWrite = document.getElementById('btn-write');
+        if (btnWrite) btnWrite.classList.add('active');
+
+        showToast('✅ تم تحميل ملف Word: ' + (mode === 'plain' ? 'كما هو بدون ترويسة' : 'على ترويسة ثقة') + ' — ' + total + ' صفحة');
+      }
       function renderPdfAllPages(typedArray) {
         pdfPageDataUrls = [];
         pdfPageDimensions = [];
