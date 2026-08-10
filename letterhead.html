@@ -1184,7 +1184,7 @@
       </div>
     </div>
     <button onclick="window.print()" class="primary">🖨️ طباعة</button>
-    <button onclick="exportPDF()" class="primary">📄 PDF</button>
+    <button onclick="downloadPDF()" class="primary">📥 تحميل PDF</button>
     <button onclick="toggleInboxPanel()" class="primary" style="background:linear-gradient(135deg,#1a5276,#7d3c98);">📥 وارد المراسلات</button>
   </div>
 
@@ -1505,52 +1505,61 @@ Kingdom of Saudi Arabia</p>
       };
 
       window.downloadPDF = function() {
-        var original = document.querySelector('.sheet');
-        if (!original) { showToast('❌ لا يوجد محتوى'); return; }
+        var sheets = document.querySelectorAll('.sheet');
+        if (!sheets.length) { showToast('❌ لا يوجد محتوى'); return; }
         showToast('⏳ جاري توليد PDF...');
 
-        // إخفاء أي نوافذ أو توستs
         var toast = document.getElementById('toast');
         if (toast) toast.classList.remove('show');
         var modal = document.getElementById('sig-modal-overlay');
         if (modal) modal.classList.remove('open');
         document.querySelectorAll('.dropdown-wrap.open').forEach(function(el) { el.classList.remove('open'); });
 
-        // استنساخ الورقة في مكان بعيد تماماً
-        var clone = original.cloneNode(true);
-        clone.style.position = 'fixed';
-        clone.style.top = '-99999px';
-        clone.style.left = '-99999px';
-        clone.style.width = '210mm';
-        clone.style.height = '297mm';
-        clone.style.margin = '0';
-        clone.style.boxShadow = 'none';
-        clone.style.borderRadius = '0';
-        document.body.appendChild(clone);
+        var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+        var clones = [];
 
-        // استخدام html2canvas مباشرة على الاستنساخ
-        html2canvas(clone, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          width: clone.offsetWidth,
-          height: clone.offsetHeight,
-          x: 0,
-          y: 0,
-          scrollX: 0,
-          scrollY: 0
-        }).then(function(canvas) {
-          var imgData = canvas.toDataURL('image/jpeg', 0.98);
-          var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-          pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-          pdf.save('thiqqah-letterhead-' + new Date().toISOString().slice(0,10) + '.pdf');
-          document.body.removeChild(clone);
-          showToast('✅ تم تحميل PDF');
-        }).catch(function(err) {
-          document.body.removeChild(clone);
-          showToast('❌ فشل توليد PDF');
-          console.error(err);
-        });
+        function captureSheet(i) {
+          if (i >= sheets.length) {
+            clones.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
+            pdf.save('thiqqah-letterhead-' + new Date().toISOString().slice(0,10) + '.pdf');
+            showToast('✅ تم تحميل PDF');
+            return;
+          }
+          var clone = sheets[i].cloneNode(true);
+          clone.style.position = 'fixed';
+          clone.style.top = '-99999px';
+          clone.style.left = '-99999px';
+          clone.style.width = '210mm';
+          clone.style.height = '297mm';
+          clone.style.margin = '0';
+          clone.style.boxShadow = 'none';
+          clone.style.borderRadius = '0';
+          document.body.appendChild(clone);
+          clones.push(clone);
+
+          html2canvas(clone, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            width: clone.offsetWidth,
+            height: clone.offsetHeight,
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0
+          }).then(function(canvas) {
+            var imgData = canvas.toDataURL('image/jpeg', 0.98);
+            if (i > 0) pdf.addPage('a4');
+            pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+            captureSheet(i + 1);
+          }).catch(function(err) {
+            clones.forEach(function(c) { if (c.parentNode) c.parentNode.removeChild(c); });
+            showToast('❌ فشل توليد PDF للصفحة ' + (i+1));
+            console.error(err);
+          });
+        }
+
+        captureSheet(0);
       };
 
       window.changeFont = function(font) {
@@ -2382,8 +2391,15 @@ Kingdom of Saudi Arabia</p>
           if (idx >= chunks.length) { callback(results.join('')); return; }
           fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[idx]) + '&langpair=' + pair)
             .then(function(r) { return r.json(); })
-            .then(function(data) { results.push(data.responseStatus === 200 ? data.responseData.translatedText : chunks[idx]); idx++; next(); })
-            .catch(function() { onError(); });
+            .then(function(data) {
+              if (data && data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+                results.push(data.responseData.translatedText);
+                idx++; next();
+              } else {
+                onError(data && data.responseStatus ? data.responseStatus : 'api-error');
+              }
+            })
+            .catch(function(err) { onError(err && err.message ? err.message : 'network'); });
         }
         next();
       }
@@ -2398,7 +2414,16 @@ Kingdom of Saudi Arabia</p>
           if (transSeparate) createTranslationSheet(translated, lang, map[lang]||lang);
           else { removeTransSheet(); insertAtCursor('<div style="border-top:1px dashed rgba(7,63,58,0.15);padding-top:8px;margin-top:10px;"><strong>🌐 الترجمة — ' + (map[lang]||lang) + ':</strong></div><div><br></div><div>' + translated.replace(/\n/g, '</div><div>') + '</div><div><br></div>'); }
           showToast('✅ تمت الترجمة');
-        }, function() { showToast('❌ فشلت الترجمة'); window.open('https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(text.substring(0,5000)), '_blank'); });
+        }, function(err) {
+          showToast('❌ خدمة الترجمة غير متاحة حالياً');
+          var encoded = encodeURIComponent(text.substring(0, 5000));
+          var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encoded;
+          setTimeout(function() {
+            if (confirm('خدمة الترجمة المجانية مشغولة. هل تريد فتح Google Translate في تبويب جديد؟')) {
+              window.open(url, '_blank');
+            }
+          }, 400);
+        });
       };
 
       /* === init === */
