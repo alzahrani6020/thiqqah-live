@@ -1932,15 +1932,10 @@ Kingdom of Saudi Arabia</p>
           content.innerHTML = '';
           content.contentEditable = 'true';
 
-          if (mode === 'plain') {
-            content.setAttribute('dir', 'ltr');
-            content.style.textAlign = 'left';
-            content.style.direction = 'ltr';
-          } else {
-            content.setAttribute('dir', 'rtl');
-            content.style.textAlign = 'right';
-            content.style.direction = 'rtl';
-          }
+          var isRtl = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(pageHtml);
+          content.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+          content.style.direction = isRtl ? 'rtl' : 'ltr';
+          content.style.textAlign = isRtl ? 'right' : 'left';
 
           content.innerHTML = '<div class="word-content" style="line-height:1.7;">' + pageHtml + '</div>';
           container.appendChild(sheet);
