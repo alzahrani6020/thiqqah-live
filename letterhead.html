@@ -204,7 +204,6 @@
     .sheet.plain-sheet .brand-ribbon,
     .sheet.plain-sheet .meta-fields,
     .sheet.plain-sheet .footer-zone,
-    .sheet.plain-sheet .page-number,
     .sheet.plain-sheet .sheet-inner-watermark {
       display: none !important;
     }
@@ -214,12 +213,24 @@
     .sheet.plain-sheet .writing-surface {
       border: none;
       background: transparent;
-      min-height: 257mm;
+      min-height: 250mm;
     }
     .sheet.plain-sheet .doc-content {
       font-family: "Times New Roman", Georgia, serif;
       font-size: 12pt;
       line-height: 1.7;
+    }
+    .sheet.plain-sheet .page-number {
+      display: block;
+      position: absolute;
+      bottom: 4mm;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9pt;
+      color: #555;
+      font-family: system-ui, sans-serif;
+      z-index: 5;
+      direction: ltr;
     }
 
     .sheet-inner {
@@ -724,11 +735,12 @@
       bottom: 2.5mm;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 7.5pt;
-      color: var(--muted);
+      font-size: 8.5pt;
+      color: var(--muted, #777);
       font-family: system-ui, sans-serif;
-      z-index: 5;
+      z-index: 20;
       direction: ltr;
+      pointer-events: none;
     }
 
     .toast {
@@ -1907,6 +1919,12 @@ Kingdom of Saudi Arabia</p>
           sheet.classList.add(mode === 'plain' ? 'plain-sheet' : 'letterhead-sheet');
 
           var pageNum = sheet.querySelector('.page-number');
+          if (!pageNum) {
+            pageNum = document.createElement('div');
+            pageNum.className = 'page-number';
+            var inner = sheet.querySelector('.sheet-inner');
+            if (inner) inner.appendChild(pageNum);
+          }
           if (pageNum) pageNum.textContent = pageCounter + ' / ' + pageCounter;
 
           var content = sheet.querySelector('.doc-content');
@@ -1931,6 +1949,12 @@ Kingdom of Saudi Arabia</p>
         var total = container.querySelectorAll('.sheet').length;
         container.querySelectorAll('.sheet').forEach(function(s, i) {
           var pn = s.querySelector('.page-number');
+          if (!pn) {
+            pn = document.createElement('div');
+            pn.className = 'page-number';
+            var inner = s.querySelector('.sheet-inner');
+            if (inner) inner.appendChild(pn);
+          }
           if (pn) pn.textContent = (i + 1) + ' / ' + total;
         });
 
