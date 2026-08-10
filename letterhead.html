@@ -1084,6 +1084,8 @@
     <button onclick="insertStampInline()">🔴 ختم</button>
     <button onclick="document.getElementById('pdf-upload').click()">📄 رفع PDF</button>
     <input type="file" id="pdf-upload" accept="application/pdf" style="display:none" onchange="handlePdfUpload(this)">
+    <button onclick="document.getElementById('word-upload').click()">📝 رفع Word</button>
+    <input type="file" id="word-upload" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="handleWordUpload(this)">
     <button onclick="undoDoc()">↩️ تراجع</button>
     <button onclick="redoDoc()">↪️ إعادة</button>
     <button onclick="saveDoc()" id="btn-save">💾 حفظ</button>
@@ -1771,6 +1773,49 @@ Kingdom of Saudi Arabia</p>
         };
         reader.readAsArrayBuffer(file);
       };
+
+      /* === رفع Word وتحريره === */
+      window.handleWordUpload = function(input) {
+        var file = input.files[0];
+        if (!file) return;
+        if (typeof mammoth === 'undefined') {
+          showToast('❌ مكتبة Mammoth غير محملة');
+          return;
+        }
+        showToast('⏳ جاري قراءة ملف Word...');
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var arrayBuffer = e.target.result;
+          mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, {
+            styleMap: [
+              "p[style-name='Heading 1'] => h1",
+              "p[style-name='Heading 2'] => h2",
+              "p[style-name='Heading 3'] => h3"
+            ]
+          }).then(function(result) {
+            var html = result.value;
+            var messages = result.messages;
+            var doc = getActiveDoc();
+            if (doc) {
+              doc.innerHTML = '<div class="word-content" style="text-align:right;direction:rtl;line-height:1.8;">' + html + '</div>';
+              doc.contentEditable = 'true';
+              var btnWrite = document.getElementById('btn-write');
+              if (btnWrite) btnWrite.classList.add('active');
+              showToast('✅ تم تحميل ملف Word. يمكنك التعديل الآن');
+            }
+            if (messages.length) {
+              console.log('Mammoth messages:', messages);
+            }
+          }).catch(function(err) {
+            showToast('❌ فشل قراءة ملف Word');
+            console.error(err);
+          });
+        };
+        reader.onerror = function() {
+          showToast('❌ فشل قراءة الملف');
+        };
+        reader.readAsArrayBuffer(file);
+      };
       function renderPdfAllPages(typedArray) {
         pdfPageDataUrls = [];
         pdfPageDimensions = [];
@@ -2345,6 +2390,7 @@ Kingdom of Saudi Arabia</p>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <div class="pdf-save-bar" id="pdf-save-bar">
     <span>📄 تم رفع PDF — ضع التوقيع ثم احفظ</span>
