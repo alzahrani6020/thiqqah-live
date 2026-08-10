@@ -2383,25 +2383,52 @@ Kingdom of Saudi Arabia</p>
         window.scrollTo({top: sheet.offsetTop, behavior: 'smooth'});
       }
 
-      function translateChunks(text, pair, callback, onError) {
+      function translateChunks(text, source, target, callback, onError) {
         var chunkSize = 450, chunks = [];
         for (var i = 0; i < text.length; i += chunkSize) chunks.push(text.substring(i, i + chunkSize));
         var results = [], idx = 0;
-        function next() {
-          if (idx >= chunks.length) { callback(results.join('')); return; }
-          fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[idx]) + '&langpair=' + pair)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-              if (data && data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
-                results.push(data.responseData.translatedText);
-                idx++; next();
-              } else {
-                onError(data && data.responseStatus ? data.responseStatus : 'api-error');
-              }
-            })
-            .catch(function(err) { onError(err && err.message ? err.message : 'network'); });
+
+        function tryMyMemory() {
+          function next() {
+            if (idx >= chunks.length) { callback(results.join('')); return; }
+            fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[idx]) + '&langpair=' + source + '|' + target)
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (data && data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+                  results.push(data.responseData.translatedText);
+                  idx++; next();
+                } else {
+                  results = []; idx = 0; tryLibre();
+                }
+              })
+              .catch(function() { results = []; idx = 0; tryLibre(); });
+          }
+          next();
         }
-        next();
+
+        function tryLibre() {
+          function next() {
+            if (idx >= chunks.length) { callback(results.join('')); return; }
+            fetch('https://libretranslate.de/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ q: chunks[idx], source: source, target: target, format: 'text' })
+            })
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (data && data.translatedText) {
+                  results.push(data.translatedText);
+                  idx++; next();
+                } else {
+                  onError('libre-error');
+                }
+              })
+              .catch(function() { onError('libre-network'); });
+          }
+          next();
+        }
+
+        tryMyMemory();
       }
 
       window.translateDoc = function(lang) {
@@ -2410,15 +2437,16 @@ Kingdom of Saudi Arabia</p>
         var map = { ar:'العربية', en:'English', fr:'French', tr:'Turkish', zh:'Chinese', ko:'Korean', es:'Spanish', ur:'Urdu', de:'German' };
         var isArabicDoc = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
         if (lang === 'ar' && isArabicDoc) { showToast('✅ المستند بالفعل بالعربية'); removeTransSheet(); return; }
+        var sourceLang = isArabicDoc ? 'ar' : 'en';
         showToast('⏳ جاري الترجمة إلى ' + (map[lang]||lang) + '...');
-        translateChunks(text, 'Autodetect|' + lang, function(translated) {
+        translateChunks(text, sourceLang, lang, function(translated) {
           if (transSeparate) createTranslationSheet(translated, lang, map[lang]||lang);
           else { removeTransSheet(); insertAtCursor('<div style="border-top:1px dashed rgba(7,63,58,0.15);padding-top:8px;margin-top:10px;"><strong>🌐 الترجمة — ' + (map[lang]||lang) + ':</strong></div><div><br></div><div>' + translated.replace(/\n/g, '</div><div>') + '</div><div><br></div>'); }
           showToast('✅ تمت الترجمة');
         }, function(err) {
           showToast('❌ خدمة الترجمة غير متاحة حالياً');
-          var encoded = encodeURIComponent(text.substring(0, 5000));
-          var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encoded;
+          var snippet = text.substring(0, 500).replace(/\s+/g, ' ');
+          var url = 'https://translate.google.com/?sl=auto&tl=' + encodeURIComponent(lang) + '&text=' + encodeURIComponent(snippet) + '&op=translate';
           setTimeout(function() {
             if (confirm('خدمة الترجمة المجانية مشغولة. هل تريد فتح Google Translate في تبويب جديد؟')) {
               window.open(url, '_blank');
