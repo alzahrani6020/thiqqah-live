@@ -2406,11 +2406,12 @@ Kingdom of Saudi Arabia</p>
 
       window.translateDoc = function(lang) {
         var text = getText();
-        if (!text) { if (lang === 'ar') { showToast('✅ اللغة العربية'); return; } showToast('⚠️ لا يوجد نص'); return; }
-        if (lang === 'ar') { showToast('✅ العربية'); removeTransSheet(); return; }
-        var map = { en:'English', fr:'French', tr:'Turkish', zh:'Chinese', ko:'Korean', es:'Spanish', ur:'Urdu', de:'German' };
+        if (!text) { showToast('⚠️ لا يوجد نص'); return; }
+        var map = { ar:'العربية', en:'English', fr:'French', tr:'Turkish', zh:'Chinese', ko:'Korean', es:'Spanish', ur:'Urdu', de:'German' };
+        var isArabicDoc = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+        if (lang === 'ar' && isArabicDoc) { showToast('✅ المستند بالفعل بالعربية'); removeTransSheet(); return; }
         showToast('⏳ جاري الترجمة إلى ' + (map[lang]||lang) + '...');
-        translateChunks(text, 'ar|' + lang, function(translated) {
+        translateChunks(text, 'Autodetect|' + lang, function(translated) {
           if (transSeparate) createTranslationSheet(translated, lang, map[lang]||lang);
           else { removeTransSheet(); insertAtCursor('<div style="border-top:1px dashed rgba(7,63,58,0.15);padding-top:8px;margin-top:10px;"><strong>🌐 الترجمة — ' + (map[lang]||lang) + ':</strong></div><div><br></div><div>' + translated.replace(/\n/g, '</div><div>') + '</div><div><br></div>'); }
           showToast('✅ تمت الترجمة');
