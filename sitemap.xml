@@ -526,4 +526,12 @@
   <url><loc>https://thiqqah.live/en/blog/renew-commercial-registration-saudi.html</loc></url>
   <url><loc>https://thiqqah.live/en/blog/renew-municipal-license-saudi.html</loc></url>
   <url><loc>https://thiqqah.live/en/blog/small-factory-license-requirements.html</loc></url>
+  <url><loc>https://thiqqah.live/services/medical-licenses.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/hotel-tourism-licenses.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/saudi-building-code.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/title-deed-update.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/social-security.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/qiwa-labor-services.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/ministry-finance-claims.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thiqqah.live/services/contractor-payment-certificates.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
